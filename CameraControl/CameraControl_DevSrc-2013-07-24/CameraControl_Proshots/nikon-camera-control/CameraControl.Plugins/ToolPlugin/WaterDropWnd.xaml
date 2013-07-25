@@ -1,0 +1,57 @@
+﻿<Controls:MetroWindow x:Class="CameraControl.Plugins.ToolPlugin.WaterDropWnd"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                      xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
+                      xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
+                      xmlns:behaviours="clr-namespace:MahApps.Metro.Behaviours;assembly=MahApps.Metro" 
+              xmlns:my="clr-namespace:CameraControl.Controls;assembly=CameraControl.Core" Height="338" Width="600" Closed="MetroWindow_Closed">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
+                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.AnimatedSingleRowTabControl.xaml" />-->
+                <ResourceDictionary Source="pack://application:,,,/CameraControl;component/Styles/Wpf.Toolkit.Extended.xaml" />
+                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
+                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
+                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <i:Interaction.Behaviors>
+        <behaviours:BorderlessWindowBehavior ResizeWithGrip="True" />
+    </i:Interaction.Behaviors>    
+    
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5" />
+            <ColumnDefinition Width="358*" />
+            <ColumnDefinition Width="99*" />
+            <ColumnDefinition Width="101*" />
+            <ColumnDefinition Width="5" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="45*" />
+            <RowDefinition Height="45*" />
+            <RowDefinition Height="45*" />
+            <RowDefinition Height="45*" />
+            <RowDefinition Height="45*" />
+            <RowDefinition Height="90*" />
+        </Grid.RowDefinitions>
+        <my:AdvancedSlider Label="Camera shutter speed (msec)" Grid.Column="1" Minimum="350" Name="slider_cmera" Maximum="10000" Value="1000"/>
+        <my:AdvancedSlider Grid.Column="1" Grid.Row="1" Label="1st Drop size"  Name="slider_drop1" Maximum="200"/>
+        <my:AdvancedSlider Grid.Column="1" Grid.Row="2" Label="Time between drops"  Name="slider_drop_wait" Maximum="200"/>
+        <my:AdvancedSlider Grid.Column="1" Grid.Row="3" Label="2st Drop size"  Name="slider_drop2" Maximum="200"/>
+        <my:AdvancedSlider Grid.Column="1" Grid.Row="4" Label="Flash"  Name="slider_flash" Maximum="1000"/>
+        <Label Content="Serial port" Grid.Column="2" VerticalContentAlignment="Center" HorizontalContentAlignment="Right"/>
+        <ComboBox Grid.Column="3" Name="cmb_ports" Margin="5" SelectionChanged="cmb_ports_SelectionChanged" />
+        <Button Content="Get Data" Grid.Column="2" Grid.Row="2" Name="btn_get" Margin="5" Click="btn_get_Click" />
+        <Button Content="Set Data" Grid.Column="3" Grid.Row="2" Name="btn_set" Margin="5" Click="btn_set_Click" />
+        <Button Content="Start" Grid.Column="3" Grid.Row="4" Name="btn_start" Margin="5" Click="btn_start_Click" />
+        <ListBox Grid.Column="1" Grid.Row="5" Name="lst_message" />
+    </Grid>
+</Controls:MetroWindow>

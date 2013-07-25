@@ -1,0 +1,2528 @@
+Index: CameraControl.Application/Languages/en-US/strings.xml
+===================================================================
+--- CameraControl.Application/Languages/en-US/strings.xml	(revision 600)
++++ CameraControl.Application/Languages/en-US/strings.xml	(working copy)
+@@ -131,7 +131,7 @@
+     <string name="LabelSessonName">Sesson name :</string> 
+     <string name="LabelFolder">Folder :</string> 
+     <string name="LabelFileNameTemplate">File Name Template :</string> 
+-    <string name="LabelFileNameTemplateToolTip">$N - Session name &#xa;$C - Counter &#xa;$E - Exposure comp &#xa;$X - Camera name&#xa;$D - Current date&#xa;$Type - Type of file (Raw|Jpg) &#xa;$Tag1 - Selected tag 1&#xa;$Tag2 - Selected tag 2&#xa;$Tag3 - Selected tag 3&#xa;$Tag4 - Selected tag 4</string> 
++    <string name="LabelFileNameTemplateToolTip">$N - Session name &#xa;$C - Counter &#xa;$E - Exposure comp &#xa;$X - Camera name&#xa;$D - Current date&#xa;$Type - Type of file (Raw|Jpg) &#xa;$Tag1 - Selected tag 1&#xa;$Tag2 - Selected tag 2&#xa;$Tag3 - Selected tag 3&#xa;$Tag4 - Selected tag 4&#xa;$Qt - Quick Tag (if set) &#xa;$- - Delimiter &#xa;$B - Barcode &#xa;$UTime - Unix Timestamp</string> 
+     <string name="LabelCounter">Counter :</string> 
+     <string name="LabelUseOriginal">Use original filename gave by the camera</string> 
+     <string name="LabelUseOriginalToolTip">This option isn't works with WIA driver</string> 
+Index: CameraControl.Core/CameraControl.Core.csproj
+===================================================================
+--- CameraControl.Core/CameraControl.Core.csproj	(revision 600)
++++ CameraControl.Core/CameraControl.Core.csproj	(working copy)
+@@ -51,6 +51,7 @@
+     <ErrorReport>prompt</ErrorReport>
+     <CodeAnalysisIgnoreBuiltInRuleSets>false</CodeAnalysisIgnoreBuiltInRuleSets>
+     <CodeAnalysisIgnoreBuiltInRules>false</CodeAnalysisIgnoreBuiltInRules>
++    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+   </PropertyGroup>
+   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+     <DebugSymbols>true</DebugSymbols>
+Index: CameraControl.Core/Classes/PhotoSession.cs
+===================================================================
+--- CameraControl.Core/Classes/PhotoSession.cs	(revision 600)
++++ CameraControl.Core/Classes/PhotoSession.cs	(working copy)
+@@ -151,6 +151,104 @@
+             }
+         }
+ 
++        private bool _retainCameraCopy;
++        public bool RetainCameraCopy
++        {
++            get { return _retainCameraCopy; }
++            set
++            {
++                _retainCameraCopy = value;
++                NotifyPropertyChanged("RetainCameraCopy");
++            }
++        }
++
++        private string _lastBarcode = "";
++        public string LastBarcode
++        {
++            get { return _lastBarcode; }
++            set
++            {
++                _lastBarcode = value;
++                NotifyPropertyChanged("LastBarcode");
++            }
++        }
++
++        private string _barcodeRegex = "";
++        public string BarcodeRegex
++        {
++            get { return _barcodeRegex; }
++            set
++            {
++                _barcodeRegex = value;
++                NotifyPropertyChanged("BarcodeRegex");
++            }
++        }
++
++        private string _barcodeDelimiter = "-";
++        public string BarcodeDelimiter
++        {
++            get { return _barcodeDelimiter; }
++            set
++            {
++                _barcodeDelimiter = (value + "-").Substring(0, 1);
++                NotifyPropertyChanged("BarcodeDelimiter");
++            }
++        }
++
++        private int _barcodeLengthMax;
++        public int BarcodeLengthMax
++        {
++            get { return _barcodeLengthMax; }
++            set
++            {
++                _barcodeLengthMax = value;
++                NotifyPropertyChanged("BarcodeLengthMax");
++            }
++        }
++
++        private int _barcodeLengthMin;
++        public int BarcodeLengthMin
++        {
++            get { return _barcodeLengthMin; }
++            set
++            {
++                _barcodeLengthMin = value;
++                NotifyPropertyChanged("BarcodeLengthMin");
++            }
++        }
++
++        private QuickTagOptions _quickTagOption;
++        public QuickTagOptions QuickTagOption
++        {
++            get { return _quickTagOption; }
++            set
++            {   
++                _quickTagOption = value;
++                QuickTagMainEditable = _quickTagOption==QuickTagOptions.Set_From_Main;
++                NotifyPropertyChanged("QuickTagOption");
++            }
++        }
++        [XmlIgnore]
++        public bool QuickTagMainEditable
++        {
++            get { return (_quickTagOption==QuickTagOptions.Set_From_Main); }
++            set 
++            {
++                NotifyPropertyChanged("QuickTagMainEditable");
++            }
++        }
++
++        private string _quickTag = "";
++        public string QuickTag
++        {
++            get { return _quickTag; }
++            set
++            {
++                _quickTag = value;
++                NotifyPropertyChanged("QuickTag");
++            }
++        }
++
+         private TagItem _selectedTag1;
+         public TagItem SelectedTag1
+         {
+@@ -343,6 +441,12 @@
+ 
+             res = res.Replace("$Type", GetType(ext));
+ 
++            res = res.Replace("$UTime", ((long)(DateTime.UtcNow-new DateTime(1970, 1, 1, 0, 0, 0)).TotalMilliseconds).ToString() );
++
++            res = res.Replace("$Qt", (String.IsNullOrWhiteSpace(QuickTag) || ServiceProvider.Settings.DefaultSession.QuickTagOption==QuickTagOptions.None) ? "" : QuickTag+"_" );
++            res = res.Replace("$B", LastBarcode);
++            res = res.Replace("$-", BarcodeDelimiter.ToString());
++
+             res = res.Replace("$X", property.DeviceName.Replace(":", "_").Replace("?", "_").Replace("*", "_"));
+             res = res.Replace("$Tag1", SelectedTag1 != null ? SelectedTag1.Value.Trim() : "");
+             res = res.Replace("$Tag2", SelectedTag1 != null ? SelectedTag2.Value.Trim() : "");
+@@ -441,4 +545,13 @@
+ 
+ 
+     }
++
++
++    public enum QuickTagOptions
++    {
++        None = 0,
++        Set_From_Session = 1,
++        Set_From_Main = 2
++    }
++
+ }
+Index: CameraControl.Core/Classes/Settings.cs
+===================================================================
+--- CameraControl.Core/Classes/Settings.cs	(revision 600)
++++ CameraControl.Core/Classes/Settings.cs	(working copy)
+@@ -49,7 +49,43 @@
+             }
+         }
+ 
++        private bool _defaultsWereLoaded;
++        public bool DefaultsWereLoaded
++        {
++            get { return _defaultsWereLoaded; }
++            set
++            {
++                _defaultsWereLoaded = value;
++                NotifyPropertyChanged("DefaultsWereLoaded");
++            }
++        }
++
+         [XmlIgnore]
++        private bool _canModifySettings;
++        [XmlIgnore]
++        public bool CanModifySettings
++        {
++            get { return _canModifySettings; }
++            set
++            {
++                _canModifySettings = value;
++                NotifyPropertyChanged("CanModifySettings");
++            }
++        }
++
++        // Security isn't really a priority here...
++        private String _settingsPassword;
++        public String SettingsPassword
++        {
++            get { return _settingsPassword; }
++            set
++            {
++                _settingsPassword = value;
++                NotifyPropertyChanged("SettingsPassword");
++            }
++        }
++
++        [XmlIgnore]
+         public ObservableCollection<PhotoSession> PhotoSessions { get; set; }
+ 
+         private BitmapFile _selectedBitmap;
+@@ -558,6 +594,7 @@
+ 
+         public void ResetSettings()
+         {
++            DefaultsWereLoaded = false;
+             DisableNativeDrivers = false;
+             AutoPreview = true;
+             CurrentThemeIndex = 0;
+Index: CameraControl.Core/Classes/WindowsCmdConsts.cs
+===================================================================
+--- CameraControl.Core/Classes/WindowsCmdConsts.cs	(revision 600)
++++ CameraControl.Core/Classes/WindowsCmdConsts.cs	(working copy)
+@@ -17,10 +17,15 @@
+         public const string CameraPropertyWnd_Show = "CameraPropertyWnd_Show";
+         public const string CameraPropertyWnd_Hide = "CameraPropertyWnd_Hide";
+         public const string FullScreenWnd_Show = "FullScreenWnd_Show";
++        public const string FullScreenWnd_ShowMin = "FullScreenWnd_ShowMin";
+         public const string FullScreenWnd_ShowTimed = "FullScreenWnd_ShowTimed";
+         public const string FullScreenWnd_Hide = "FullScreenWnd_Hide";
++        public const string EditSessionWnd_Firstrun = "EditSessionWnd_Firstrun";
++        public const string EditSessionWnd_Show = "EditSessionWnd_Show";
++        public const string EditSessionWnd_Hide = "EditSessionWnd_Hide";
+         public const string FocusStackingWnd_Show = "FocusStackingWnd_Show";
+         public const string FocusStackingWnd_Hide = "FocusStackingWnd_Hide";
++        public const string LiveViewSimpleWnd_Show = "LiveViewSimpleWnd_Show";
+         public const string LiveViewWnd_Show = "LiveViewWnd_Show";
+         public const string LiveViewWnd_Hide = "LiveViewWnd_Hide";
+         public const string AstroLiveViewWnd_Show = "AstroLiveViewWnd_Show";
+Index: CameraControl.Plugins/CameraControl.Plugins.csproj
+===================================================================
+--- CameraControl.Plugins/CameraControl.Plugins.csproj	(revision 600)
++++ CameraControl.Plugins/CameraControl.Plugins.csproj	(working copy)
+@@ -106,6 +106,9 @@
+     <Compile Include="Class1.cs" />
+     <Compile Include="ExportPlugins\ExportToZip.cs" />
+     <Compile Include="ExternalDevices\SerialPortShutterRelease.cs" />
++    <Compile Include="MainWindowPlugins\ProshotsWindow.xaml.cs">
++      <DependentUpon>ProshotsWindow.xaml</DependentUpon>
++    </Compile>
+     <Compile Include="MainWindowPlugins\SimpleMainWindow.xaml.cs">
+       <DependentUpon>SimpleMainWindow.xaml</DependentUpon>
+     </Compile>
+@@ -119,6 +122,13 @@
+     <Compile Include="ToolPlugin\WaterDropWnd.xaml.cs">
+       <DependentUpon>WaterDropWnd.xaml</DependentUpon>
+     </Compile>
++    <Compile Include="WindowExtensions.cs" />
++    <Compile Include="windows\DialogPrompt.xaml.cs">
++      <DependentUpon>DialogPrompt.xaml</DependentUpon>
++    </Compile>
++    <Compile Include="windows\PasswordPrompt.xaml.cs">
++      <DependentUpon>PasswordPrompt.xaml</DependentUpon>
++    </Compile>
+   </ItemGroup>
+   <ItemGroup>
+     <ProjectReference Include="..\CameraControl.Core\CameraControl.Core.csproj">
+@@ -141,6 +151,10 @@
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+     </Page>
++    <Page Include="MainWindowPlugins\ProshotsWindow.xaml">
++      <Generator>MSBuild:Compile</Generator>
++      <SubType>Designer</SubType>
++    </Page>
+     <Page Include="MainWindowPlugins\SimpleMainWindow.xaml">
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+@@ -157,11 +171,21 @@
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+     </Page>
++    <Page Include="windows\DialogPrompt.xaml">
++      <Generator>MSBuild:Compile</Generator>
++      <SubType>Designer</SubType>
++    </Page>
++    <Page Include="windows\PasswordPrompt.xaml">
++      <SubType>Designer</SubType>
++      <Generator>MSBuild:Compile</Generator>
++    </Page>
+   </ItemGroup>
+   <ItemGroup>
+     <Content Include="Resources\Entypo-license.txt" />
+   </ItemGroup>
+-  <ItemGroup />
++  <ItemGroup>
++    <WCFMetadata Include="Service References\" />
++  </ItemGroup>
+   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+        Other similar extension points exist, see Microsoft.Common.targets.
+Index: CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml
+===================================================================
+--- CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml	(revision 0)
++++ CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml	(working copy)
+@@ -0,0 +1,253 @@
++﻿<Controls:MetroWindow x:Class="CameraControl.Plugins.MainWindowPlugins.ProshotsWindow"
++             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
++             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
++             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
++             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
++                      xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro" mc:Ignorable="d" 
++              Closed="MetroWindow_Closed"  Width="548" Height="314" ShowMaxRestoreButton="False" ShowMinButton="False" WindowStartupLocation="CenterScreen" xmlns:my="clr-namespace:CameraControl.Plugins.MainWindowPlugins"
++                      xmlns:Core="clr-namespace:CameraControl.Core;assembly=CameraControl.Core" Loaded="MetroWindow_Loaded">
++    <Window.Resources>
++        <ResourceDictionary>
++            <ResourceDictionary.MergedDictionaries>
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Menu.xaml"/>-->
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
++
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
++            </ResourceDictionary.MergedDictionaries>
++            <!--code from http://www.codeproject.com/Articles/32257/A-Style-for-Round-Glassy-WPF-Buttons -->
++            <Style x:Key="GlassButton" TargetType="{x:Type Button}">
++                <Setter Property="SnapsToDevicePixels" Value="True"/>
++                <Setter Property="OverridesDefaultStyle" Value="True"/>
++                <Setter Property="Template">
++                    <Setter.Value>
++                        <ControlTemplate TargetType="{x:Type Button}">
++                            <Grid>
++                                <!-- Background Layer -->
++                                <Ellipse Fill="{TemplateBinding Background}"/>
++                                <!-- Refraction Layer -->
++                                <Ellipse x:Name="RefractionLayer">
++                                    <Ellipse.Fill>
++                                        <RadialGradientBrush GradientOrigin="0.496,1.052">
++                                            <RadialGradientBrush.RelativeTransform>
++                                                <TransformGroup>
++                                                    <ScaleTransform CenterX="0.5" CenterY="0.5" ScaleX="1.5" ScaleY="1.5"/>
++                                                    <TranslateTransform X="0.02" Y="0.3"/>
++                                                </TransformGroup>
++                                            </RadialGradientBrush.RelativeTransform>
++                                            <GradientStop Offset="1" Color="#00000000"/>
++                                            <GradientStop Offset="0.4" Color="#FFFFFFFF"/>
++                                        </RadialGradientBrush>
++                                    </Ellipse.Fill>
++                                </Ellipse>
++                                <!-- Reflection Layer -->
++                                <Path x:Name="ReflectionLayer" VerticalAlignment="Top" Stretch="Fill">
++                                    <Path.RenderTransform>
++                                        <ScaleTransform ScaleY="0.5" />
++                                    </Path.RenderTransform>
++                                    <Path.Data>
++                                        <PathGeometry>
++                                            <PathFigure IsClosed="True" StartPoint="98.999,45.499">
++                                                <BezierSegment Point1="98.999,54.170" Point2="89.046,52.258" Point3="85.502,51.029"/>
++                                                <BezierSegment
++                                    IsSmoothJoin="True"
++                                    Point1="75.860,47.685"
++                                    Point2="69.111,45.196"
++                                    Point3="50.167,45.196"/>
++                                                <BezierSegment Point1="30.805,45.196" Point2="20.173,47.741" Point3="10.665,51.363"/>
++                                                <BezierSegment
++                                    IsSmoothJoin="True"
++                                    Point1="7.469,52.580"
++                                    Point2="1.000,53.252"
++                                    Point3="1.000,44.999"/>
++                                                <BezierSegment Point1="1.000,39.510" Point2="0.884,39.227" Point3="2.519,34.286"/>
++                                                <BezierSegment
++                                    IsSmoothJoin="True"
++                                    Point1="9.106,14.370"
++                                    Point2="27.875,0"
++                                    Point3="50,0"/>
++                                                <BezierSegment Point1="72.198,0" Point2="91.018,14.466" Point3="97.546,34.485"/>
++                                                <BezierSegment
++                                    IsSmoothJoin="True"
++                                    Point1="99.139,39.369"
++                                    Point2="98.999,40.084"
++                                    Point3="98.999,45.499"/>
++                                            </PathFigure>
++                                        </PathGeometry>
++                                    </Path.Data>
++                                    <Path.Fill>
++                                        <RadialGradientBrush GradientOrigin="0.498,0.526">
++                                            <RadialGradientBrush.RelativeTransform>
++                                                <TransformGroup>
++                                                    <ScaleTransform
++                                       CenterX="0.5"
++                                       CenterY="0.5"
++                                       ScaleX="1"
++                                       ScaleY="1.997"/>
++                                                    <TranslateTransform X="0" Y="0.5"/>
++                                                </TransformGroup>
++                                            </RadialGradientBrush.RelativeTransform>
++                                            <GradientStop Offset="1" Color="#FFFFFFFF"/>
++                                            <GradientStop Offset="0.85" Color="#92FFFFFF"/>
++                                            <GradientStop Offset="0" Color="#00000000"/>
++                                        </RadialGradientBrush>
++                                    </Path.Fill>
++                                </Path>
++                                <!-- ContentPresenter -->
++                                <ContentPresenter Margin="0,2,0,0" HorizontalAlignment="Center" VerticalAlignment="Center"/>
++
++
++                            </Grid>
++                            <ControlTemplate.Triggers>
++                                <Trigger Property="IsMouseOver" Value="True">
++                                    <Setter TargetName="RefractionLayer" Property="Fill">
++                                        <Setter.Value>
++                                            <RadialGradientBrush GradientOrigin="0.496,1.052">
++                                                <RadialGradientBrush.RelativeTransform>
++                                                    <TransformGroup>
++                                                        <ScaleTransform
++                                          CenterX="0.5"
++                                          CenterY="0.5"
++                                          ScaleX="1.5"
++                                          ScaleY="1.5"/>
++                                                        <TranslateTransform X="0.02" Y="0.3"/>
++                                                    </TransformGroup>
++                                                </RadialGradientBrush.RelativeTransform>
++                                                <GradientStop Offset="1" Color="#00000000"/>
++                                                <GradientStop Offset="0.45" Color="#FFFFFFFF"/>
++                                            </RadialGradientBrush>
++                                        </Setter.Value>
++                                    </Setter>
++                                    <Setter TargetName="ReflectionLayer" Property="Fill">
++                                        <Setter.Value>
++                                            <RadialGradientBrush GradientOrigin="0.498,0.526">
++                                                <RadialGradientBrush.RelativeTransform>
++                                                    <TransformGroup>
++                                                        <ScaleTransform
++                                          CenterX="0.5"
++                                          CenterY="0.5"
++                                          ScaleX="1"
++                                          ScaleY="1.997"/>
++                                                        <TranslateTransform X="0" Y="0.5"/>
++                                                    </TransformGroup>
++                                                </RadialGradientBrush.RelativeTransform>
++                                                <GradientStop Offset="1" Color="#FFFFFFFF"/>
++                                                <GradientStop Offset="0.85" Color="#BBFFFFFF"/>
++                                                <GradientStop Offset="0" Color="#00000000"/>
++                                            </RadialGradientBrush>
++                                        </Setter.Value>
++                                    </Setter>
++                                </Trigger>
++                                <Trigger Property="IsPressed" Value="True">
++                                    <Setter TargetName="RefractionLayer" Property="Fill">
++                                        <Setter.Value>
++                                            <RadialGradientBrush GradientOrigin="0.496,1.052">
++                                                <RadialGradientBrush.RelativeTransform>
++                                                    <TransformGroup>
++                                                        <ScaleTransform
++                                          CenterX="0.5"
++                                          CenterY="0.5"
++                                          ScaleX="1.5"
++                                          ScaleY="1.5"/>
++                                                        <TranslateTransform X="0.02" Y="0.3"/>
++                                                    </TransformGroup>
++                                                </RadialGradientBrush.RelativeTransform>
++                                                <GradientStop Offset="1" Color="#00000000"/>
++                                                <GradientStop Offset="0.3" Color="#FFFFFFFF"/>
++                                            </RadialGradientBrush>
++                                        </Setter.Value>
++                                    </Setter>
++                                    <Setter TargetName="ReflectionLayer" Property="Fill">
++                                        <Setter.Value>
++                                            <RadialGradientBrush GradientOrigin="0.498,0.526">
++                                                <RadialGradientBrush.RelativeTransform>
++                                                    <TransformGroup>
++                                                        <ScaleTransform
++                                          CenterX="0.5"
++                                          CenterY="0.5"
++                                          ScaleX="1"
++                                          ScaleY="1.997"/>
++                                                        <TranslateTransform X="0" Y="0.5"/>
++                                                    </TransformGroup>
++                                                </RadialGradientBrush.RelativeTransform>
++                                                <GradientStop Offset="1" Color="#CCFFFFFF"/>
++                                                <GradientStop Offset="0.85" Color="#66FFFFFF"/>
++                                                <GradientStop Offset="0" Color="#00000000"/>
++                                            </RadialGradientBrush>
++                                        </Setter.Value>
++                                    </Setter>
++                                </Trigger>
++                            </ControlTemplate.Triggers>
++                        </ControlTemplate>
++                    </Setter.Value>
++                </Setter>
++            </Style>
++        </ResourceDictionary>
++    </Window.Resources>
++    <Controls:MetroWindow.WindowCommands>
++        <Controls:WindowCommands>
++            <Button Content="Toggle always in top" Name="btn_top" Click="btn_top_Click" />
++        </Controls:WindowCommands>
++    </Controls:MetroWindow.WindowCommands>
++    <Grid Name="MainGrid">
++        <Grid.RowDefinitions>
++            <RowDefinition Height="37" />
++            <RowDefinition Height="25" />
++            <RowDefinition Height="37" />
++            <RowDefinition Height="37" />
++            <RowDefinition Height="37" />
++            <RowDefinition Height="37" />
++            <RowDefinition Height="65" />
++        </Grid.RowDefinitions>
++        <Grid.ColumnDefinitions>
++            <ColumnDefinition Width="100*" />
++            <ColumnDefinition Width="200*" />
++            <ColumnDefinition Width="1" />
++        </Grid.ColumnDefinitions>
++        
++        <Label Content="Camera:" Grid.Column="0" Name="Label0" HorizontalAlignment="Right" />
++        <ComboBox Grid.Column="1" Name="cmb_select" Margin="3" ItemsSource="{Binding Source={x:Static Member=Core:ServiceProvider.DeviceManager}, Path=ConnectedDevices}" SelectedItem="{Binding Source={x:Static Member=Core:ServiceProvider.DeviceManager}, Path=SelectedCameraDevice}">
++            <ComboBox.ItemTemplate>
++                <DataTemplate>
++                    <Label Content="{Binding Path=DeviceName}"/>
++                </DataTemplate>
++            </ComboBox.ItemTemplate>
++        </ComboBox>
++
++        <Label Content="Retain copy on card:" Grid.Column="0" Grid.Row="1" Name="lbl_ClearCard" Grid.ColumnSpan="1" HorizontalAlignment="Right" />
++        <CheckBox Grid.Column="1" Grid.Row="1" VerticalAlignment="Center" Margin="2" IsChecked="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.RetainCameraCopy}"/>
++        
++        <Label Content="QuickTag:" Grid.Column="0" Grid.Row="2" Name="lbl_Prefix" Grid.ColumnSpan="1" HorizontalAlignment="Right" />
++        <TextBox Grid.Column="1" Grid.Row="2" Name="txt_Prefix" Margin="2" Grid.ColumnSpan="1" MaxLength="3" Width="100" HorizontalAlignment="Left" KeyUp="on_txt_Prefix_KeyUp"
++                 IsEnabled="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.QuickTagMainEditable}"
++                 Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.QuickTag}" IsReadOnly="False"/>
++
++        <Label Content="Barcode:" Grid.Column="0" Grid.Row="4" Name="lbl_Barcode" Grid.ColumnSpan="1" HorizontalAlignment="Right" />
++        <TextBox Grid.Column="1" Grid.Row="4" Name="txt_Barcode" Margin="2" Grid.ColumnSpan="1" KeyUp="on_txt_Barcode_KeyUp" KeyDown="on_txt_Barcode_KeyDown" 
++                 Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.Barcode}" IsReadOnly="False" />
++
++        <ProgressBar Grid.Row="6" Margin="3" Value="{Binding Source={x:Static Member=Core:ServiceProvider.DeviceManager}, Path=SelectedCameraDevice.TransferProgress}"/>
++
++        <StackPanel Orientation="Horizontal" Grid.Row="6" Grid.Column="1">
++
++            <Button ToolTip="Live View" Height="55" Name="btn_LiveView" Width="55" Margin="5" Click="on_btn_LiveView" Style="{DynamicResource MetroCircleButtonStyle}">
++                <Label Content="View" />
++            </Button>
++            
++            <Button ToolTip="Image Preview" Height="55" Name="btn_Preview" Width="55" Margin="5" Click="on_btn_Preview" Style="{DynamicResource MetroCircleButtonStyle}">
++                <Label Content="Preview" />
++            </Button>
++
++            <Button ToolTip="Session Settings" Height="55" Name="btn_Session" Width="55" Margin="5" Click="on_btn_Session" Style="{DynamicResource MetroCircleButtonStyle}">
++                <Label Content="Session" />
++            </Button>
++            
++        </StackPanel>
++            
++    </Grid>
++</Controls:MetroWindow>
+Index: CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml.cs
+===================================================================
+--- CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml.cs	(revision 0)
++++ CameraControl.Plugins/MainWindowPlugins/ProshotsWindow.xaml.cs	(working copy)
+@@ -0,0 +1,367 @@
++﻿using System;
++using System.Collections.Generic;
++using System.ComponentModel;
++using System.Diagnostics;
++using System.IO;
++using System.Linq;
++using System.Text;
++using System.Threading;
++using System.Windows;
++using System.Windows.Controls;
++using System.Windows.Data;
++using System.Windows.Documents;
++using System.Windows.Forms;
++using System.Windows.Input;
++using System.Windows.Media;
++using System.Windows.Media.Imaging;
++using System.Windows.Navigation;
++using CameraControl.Core;
++using CameraControl.Core.Classes;
++using CameraControl.Core.Interfaces;
++using CameraControl.Devices;
++using CameraControl.Devices.Classes;
++using MessageBox = System.Windows.MessageBox;
++using System.Xml;
++using System.Text.RegularExpressions;
++
++namespace CameraControl.Plugins.MainWindowPlugins
++{
++  /// <summary>
++  /// Interaction logic for UserControl1.xaml
++  /// </summary>
++  public partial class ProshotsWindow : IMainWindowPlugin, INotifyPropertyChanged
++  { 
++    public string DisplayName { get; set; }
++
++    System.Windows.Threading.DispatcherTimer _timer;
++
++    // Internal use; doesn't need notifiers.
++    public bool BarcodeVerified;
++    public bool BarcodeUsed = true;
++
++    public string Barcode
++    {
++        get { return ServiceProvider.Settings.DefaultSession.LastBarcode; }
++        set
++        {
++            ServiceProvider.Settings.DefaultSession.LastBarcode = value;
++            NotifyPropertyChanged("Barcode");
++        }
++    }
++
++    public string QuickTag
++    {
++        get { return ServiceProvider.Settings.DefaultSession.QuickTag; }
++        set
++        {
++            ServiceProvider.Settings.DefaultSession.QuickTag = value;
++            NotifyPropertyChanged("QuickTag");
++        }
++    }
++
++    public ProshotsWindow()
++    {
++        DisplayName = "Proshots Custom";
++        InitializeComponent();
++    }
++
++    private void MetroWindow_Loaded(object sender, RoutedEventArgs e)
++    {
++        ServiceProvider.DeviceManager.PhotoCaptured += DeviceManager_PhotoCaptured;
++        ServiceProvider.DeviceManager.CameraDisconnected += DeviceManager_CameraDisconnected;
++
++        _timer = new System.Windows.Threading.DispatcherTimer();
++        _timer.Tick += on_timer_Tick;
++        _timer.Interval = new TimeSpan(0, 0, 0, 0, 250);
++
++        brushRegexDef = txt_Barcode.Background;
++        flashBackgroundDefault = MainGrid.Background;
++        
++        if(!ServiceProvider.Settings.DefaultsWereLoaded)
++            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Firstrun);
++        
++        CheckBarcode();
++    }
++
++    public void ShowWarning(string msg)
++    {
++        Dispatcher.BeginInvoke(new Action(delegate
++        { 
++            FlashScreen(-1);
++            var prompt = new CameraControl.Plugins.windows.DialogPrompt(msg); 
++            prompt.ShowDialog();
++            FlashScreenStop();
++        }));
++    }
++    
++    private Brush flashBackgroundDefault = null;
++    private Brush flashBackgroundWarning = new SolidColorBrush(Color.FromRgb(0xAF, 0x00, 0x00));    
++    private int timer_TicksRemain;
++    private void on_timer_Tick(object sender, EventArgs e)
++    {   
++        if (timer_TicksRemain == 0)
++        {
++            MainGrid.Background = flashBackgroundDefault;
++            _timer.Stop();
++            return;
++        }
++        if (timer_TicksRemain > 0)
++            timer_TicksRemain--;
++        else
++            timer_TicksRemain = (timer_TicksRemain == -1) ? -2 : -1;
++        
++        Dispatcher.BeginInvoke(new Action(delegate
++        {   
++            MainGrid.Background = (timer_TicksRemain % 2 == 0) ? flashBackgroundWarning : flashBackgroundDefault;
++        }));
++    }
++    public void FlashScreen(int flashes)
++    {
++        Dispatcher.BeginInvoke(new Action(delegate
++        {
++            this.Activate();
++        }));
++        timer_TicksRemain = flashes * 2;
++        _timer.Start();
++    }
++    public void FlashScreenStop()
++    {
++        timer_TicksRemain = 0;
++    }
++
++
++    void DeviceManager_PhotoCaptured(object sender, PhotoCapturedEventArgs eventArgs)
++    {
++      PhotoCaptured(eventArgs);
++      //Thread thread = new Thread(PhotoCaptured);
++      //thread.Start(eventArgs);
++    }
++
++    void DeviceManager_CameraDisconnected(ICameraDevice target)
++    {
++        ShowWarning("Camera Disconnected!");
++    }
++
++    private void MetroWindow_Closed(object sender, EventArgs e)
++    {
++      ServiceProvider.WindowsManager.ExecuteCommand(CmdConsts.All_Close);
++    }
++
++    #region Implementation of INotifyPropertyChanged
++
++    public virtual event PropertyChangedEventHandler PropertyChanged;
++
++    public virtual void NotifyPropertyChanged(String info)
++    {
++      if (PropertyChanged != null)
++      {
++        PropertyChanged(this, new PropertyChangedEventArgs(info));
++      }
++    }
++
++    #endregion
++
++    private void btn_capture_Click(object sender, RoutedEventArgs e)
++    {
++      try
++      {
++        ServiceProvider.DeviceManager.SelectedCameraDevice.CapturePhoto();
++      }
++      catch (DeviceException exception)
++      {
++        MessageBox.Show("Error occurred :" + exception.Message);
++      }
++    }
++
++    private void PhotoCaptured(object o)
++    {
++        PhotoSession session = ServiceProvider.Settings.DefaultSession;
++        
++        // Save recent barcode and prefix.
++        ServiceProvider.Settings.Save(ServiceProvider.Settings.DefaultSession);
++        ServiceProvider.Settings.Save();
++
++        ServiceProvider.Settings.DefaultSession.Files.Clear();
++        GC.Collect();
++
++        if (!BarcodeVerified)
++        {
++            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, new FileItem(""));
++            ShowWarning("Invalid Barcode; Image not transfered!");
++            return;
++        }
++
++        PhotoCapturedEventArgs eventArgs = o as PhotoCapturedEventArgs;
++        if (eventArgs == null) return;
++
++        try
++        {
++            Log.Debug("Photo transfer begin.");
++            eventArgs.CameraDevice.IsBusy = true;
++            CameraProperty property = ServiceProvider.Settings.CameraProperties.Get(eventArgs.CameraDevice);
++            
++            if (!eventArgs.CameraDevice.CaptureInSdRam)
++            {
++                if (property.NoDownload)
++                {
++                    eventArgs.CameraDevice.IsBusy = false;
++                    return;
++                }
++                var extension = Path.GetExtension(eventArgs.FileName);
++                if (extension != null && (session.DownloadOnlyJpg && extension.ToLower() != ".jpg"))
++                {
++                    eventArgs.CameraDevice.IsBusy = false;
++                    return;
++                }
++            }
++
++            string fileName = "";
++            if (!session.UseOriginalFilename || eventArgs.CameraDevice.CaptureInSdRam)
++            {
++                fileName =
++                  session.GetNextFileName(Path.GetExtension(eventArgs.FileName),
++                                          eventArgs.CameraDevice);
++            }
++            else
++            {
++                fileName = Path.Combine(session.Folder, eventArgs.FileName);
++            }
++            
++            if (File.Exists(fileName))
++                fileName = StaticHelper.GetUniqueFilename(
++                        Path.GetDirectoryName(fileName) + "\\" + Path.GetFileNameWithoutExtension(fileName) + "_", 0,
++                        Path.GetExtension(fileName));
++            
++
++            if (!Directory.Exists(Path.GetDirectoryName(fileName)))
++            {
++                Directory.CreateDirectory(Path.GetDirectoryName(fileName));
++            }
++
++            //var tmpFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName,
++            //                                   "Cache", Path.GetFileName(fileName));
++
++            Log.Debug("Transfer started :" + fileName);
++            DateTime startTIme = DateTime.Now;
++            eventArgs.CameraDevice.TransferFile(eventArgs.Handle, fileName);
++            Log.Debug("Transfer done :" + fileName);
++            Log.Debug("[BENCHMARK]Speed :" +
++                      (new System.IO.FileInfo(fileName).Length / (DateTime.Now - startTIme).TotalSeconds / 1024 / 1024).ToString("0000.00"));
++            Log.Debug("[BENCHMARK]Transfer time :" + ((DateTime.Now - startTIme).TotalSeconds).ToString("0000.000"));
++
++            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, session.AddFile(fileName));
++            //ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, new Tuple<FileItem,string>(session.AddFile(tmpFileName), fileName));
++            
++            if (!session.RetainCameraCopy && BarcodeVerified) {
++                var Cam = ServiceProvider.DeviceManager.SelectedCameraDevice;
++                var imgFile = Cam.GetObjects(null).Where(t => (uint)(t.Handle) == (uint)(eventArgs.Handle)).Single();
++                FileItem fileItem = new FileItem(imgFile, Cam);
++                fileItem.Device.DeleteObject(fileItem.DeviceObject);
++            }
++
++            BarcodeUsed = true;
++            eventArgs.CameraDevice.IsBusy = false;
++           
++            if (ServiceProvider.Settings.PlaySound)
++            {
++                PhotoUtils.PlayCaptureSound();
++            }
++        }
++        catch (Exception exception)
++        {
++            eventArgs.CameraDevice.IsBusy = false;
++            MessageBox.Show("Error downloading photo from camera :\n" + exception.ToString());
++        }
++
++        Log.Debug("Photo transfer done.");
++        GC.Collect();
++    }
++
++    private void btn_top_Click(object sender, RoutedEventArgs e)
++    {
++      Topmost = !Topmost;
++    }
++
++    private void on_btn_Preview(object sender, RoutedEventArgs e)
++    {
++        var t = ServiceProvider.Settings.SelectedBitmap;
++        ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.FullScreenWnd_ShowMin);
++    }
++
++    private void on_btn_Session(object sender, RoutedEventArgs e)
++    {
++        var dialog = new CameraControl.Plugins.windows.PasswordPrompt("A password is required to edit these settings.");
++        var res = dialog.ShowDialog() ?? false;
++        if (res && dialog.ResponseString==ServiceProvider.Settings.SettingsPassword)
++            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Show);
++    }
++
++    private Brush brushRegexDef = null;
++    private Brush brushRegexOkay = new SolidColorBrush(Color.FromRgb(0x00, 0x6F, 0x00));
++    private Brush brushRegexBad = new SolidColorBrush(Color.FromRgb(0x6F, 0x00, 0x00));
++    
++      private void CheckBarcode() {
++        var Session = ServiceProvider.Settings.DefaultSession;
++
++        bool PassedRegex = false;
++        try
++        {
++            Regex BarcodeCheck = new Regex(Session.BarcodeRegex);
++            if (BarcodeCheck.IsMatch(Barcode))
++                PassedRegex = true;
++        }
++        catch (Exception e)
++        {
++            Log.Debug(e.ToString());
++        }
++
++        bool PassedLength = ( Barcode.Length <= Session.BarcodeLengthMax && Barcode.Length >= Session.BarcodeLengthMin );
++
++        if (PassedLength && PassedRegex)
++        {
++            txt_Barcode.Background = brushRegexOkay;
++            BarcodeVerified = true;
++        }
++        else
++        {
++            txt_Barcode.Background = brushRegexBad;
++            if (String.IsNullOrEmpty(Barcode))
++                txt_Barcode.Background = brushRegexDef;
++            BarcodeVerified = false;
++        }
++    }
++
++    private void on_txt_Prefix_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
++    {
++        var QTRegex = @"[^a-zA-Z]{1}";
++        QuickTag = txt_Prefix.Text;    // Expedite update
++        var pos = txt_Prefix.CaretIndex;
++        var matchesBefore = Regex.Matches(QuickTag.Substring(0,pos), QTRegex).Count;
++        QuickTag = Regex.Replace(QuickTag, QTRegex, "");
++        txt_Prefix.Text = QuickTag;
++        txt_Prefix.CaretIndex = pos - matchesBefore;
++    }
++
++    private void on_txt_Barcode_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
++    {
++        Barcode = txt_Barcode.Text;    // Expedite update
++        BarcodeUsed = false;
++        CheckBarcode();
++    }
++
++    private void on_txt_Barcode_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
++    {
++        if (BarcodeUsed)
++            txt_Barcode.Text = "";
++    }
++
++    private void on_btn_LiveView(object sender, RoutedEventArgs e)
++    {
++        var canView = ServiceProvider.DeviceManager.SelectedCameraDevice.GetCapability(CapabilityEnum.LiveView);
++        //ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Show, ServiceProvider.DeviceManager.SelectedCameraDevice);
++        ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewSimpleWnd_Show, ServiceProvider.DeviceManager.SelectedCameraDevice);
++    }
++
++    
++  }
++}
+Index: CameraControl.Plugins/Plugins.cs
+===================================================================
+--- CameraControl.Plugins/Plugins.cs	(revision 600)
++++ CameraControl.Plugins/Plugins.cs	(working copy)
+@@ -23,6 +23,7 @@
+                 ServiceProvider.PluginManager.ExportPlugins.Add(new ExportToZip());
+                 ServiceProvider.PluginManager.ExportPlugins.Add(new ExportToFolder());
+                 ServiceProvider.PluginManager.MainWindowPlugins.Add(new SimpleMainWindow());
++                ServiceProvider.PluginManager.MainWindowPlugins.Add(new ProshotsWindow());
+                 ServiceProvider.PluginManager.ToolPlugins.Add(new PhdPlugin());
+                 ServiceProvider.PluginManager.ToolPlugins.Add(new WaterDropWnd());
+                 ServiceProvider.ExternalDeviceManager.ExternalDevices.Add(new SerialPortShutterRelease());
+Index: CameraControl.Plugins/WindowExtensions.cs
+===================================================================
+--- CameraControl.Plugins/WindowExtensions.cs	(revision 0)
++++ CameraControl.Plugins/WindowExtensions.cs	(working copy)
+@@ -0,0 +1,75 @@
++﻿using System;
++using System.Runtime.InteropServices;
++using System.Windows;
++using System.Windows.Interop;
++
++/* Kudos:
++ * http://www.jarloo.com/flashing-a-wpf-window/
++ */
++
++namespace Jarloo
++{
++    public static class WindowExtensions
++    {
++        #region Window Flashing API Stuff
++
++        private const UInt32 FLASHW_STOP = 0; //Stop flashing. The system restores the window to its original state.
++        private const UInt32 FLASHW_CAPTION = 1; //Flash the window caption.
++        private const UInt32 FLASHW_TRAY = 2; //Flash the taskbar button.
++        private const UInt32 FLASHW_ALL = 3; //Flash both the window caption and taskbar button.
++        private const UInt32 FLASHW_TIMER = 4; //Flash continuously, until the FLASHW_STOP flag is set.
++        private const UInt32 FLASHW_TIMERNOFG = 12; //Flash continuously until the window comes to the foreground.
++
++        [StructLayout(LayoutKind.Sequential)]
++        private struct FLASHWINFO
++        {
++            public UInt32 cbSize; //The size of the structure in bytes.
++            public IntPtr hwnd; //A Handle to the Window to be Flashed. The window can be either opened or minimized.
++            public UInt32 dwFlags; //The Flash Status.
++            public UInt32 uCount; // number of times to flash the window
++            public UInt32 dwTimeout; //The rate at which the Window is to be flashed, in milliseconds. If Zero, the function uses the default cursor blink rate.
++        }
++
++        [DllImport("user32.dll")]
++        [return: MarshalAs(UnmanagedType.Bool)]
++        private static extern bool FlashWindowEx(ref FLASHWINFO pwfi);
++
++        #endregion
++
++        public static void FlashWindow(this Window win, UInt32 count = UInt32.MaxValue)
++        {
++            //Don't flash if the window is active
++            //if (win.IsActive) return;
++
++            WindowInteropHelper h = new WindowInteropHelper(win);
++
++            FLASHWINFO info = new FLASHWINFO
++            {
++                hwnd = h.Handle,
++                dwFlags = FLASHW_ALL | FLASHW_TIMER,
++                uCount = count,
++                dwTimeout = 0
++            };
++
++            info.cbSize = Convert.ToUInt32(Marshal.SizeOf(info));
++            FlashWindowEx(ref info);
++        }
++
++        public static void StopFlashingWindow(this Window win)
++        {
++            WindowInteropHelper h = new WindowInteropHelper(win);
++
++            FLASHWINFO info = new FLASHWINFO();
++            info.hwnd = h.Handle;
++            info.cbSize = Convert.ToUInt32(Marshal.SizeOf(info));
++            info.dwFlags = FLASHW_STOP;
++            info.uCount = UInt32.MaxValue;
++            info.dwTimeout = 0;
++
++            FlashWindowEx(ref info);
++        }
++
++        [System.Runtime.InteropServices.DllImport("kernel32 .dll")]
++        public static extern bool Beep(int freq, int dur);
++    }
++}
+\ No newline at end of file
+Index: CameraControl.Plugins/windows/DialogPrompt.xaml
+===================================================================
+--- CameraControl.Plugins/windows/DialogPrompt.xaml	(revision 0)
++++ CameraControl.Plugins/windows/DialogPrompt.xaml	(working copy)
+@@ -0,0 +1,30 @@
++﻿<Controls:MetroWindow x:Class="CameraControl.Plugins.windows.DialogPrompt"
++        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
++        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Notice:" Height="95" Width="255" Loaded="Window_Loaded" ResizeMode="NoResize" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" WindowStyle="None"
++        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
++        xmlns:Classes="clr-namespace:CameraControl.Core.Classes;assembly=CameraControl.Core"
++        xmlns:T="clr-namespace:CameraControl.Core.Translation;assembly=CameraControl.Core"
++        xmlns:sys="clr-namespace:System;assembly=mscorlib"
++        WindowStartupLocation="CenterScreen" Topmost="True">
++    <Window.Resources>
++        <ResourceDictionary>
++            <ResourceDictionary.MergedDictionaries>
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.AnimatedSingleRowTabControl.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/CameraControl;component/Styles/Wpf.Toolkit.Extended.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
++            </ResourceDictionary.MergedDictionaries>
++        </ResourceDictionary>
++    </Window.Resources>
++    
++    <Grid>
++        <TextBlock Name="txtPromptMessage" Margin="2" VerticalAlignment="Top"/>
++        <Button Content="OK" Width="50" Height="23" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="on_Okay" Margin="2"/>
++    </Grid>
++</Controls:MetroWindow>
+Index: CameraControl.Plugins/windows/DialogPrompt.xaml.cs
+===================================================================
+--- CameraControl.Plugins/windows/DialogPrompt.xaml.cs	(revision 0)
++++ CameraControl.Plugins/windows/DialogPrompt.xaml.cs	(working copy)
+@@ -0,0 +1,43 @@
++﻿using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Text;
++using System.Windows;
++using System.Windows.Controls;
++using System.Windows.Data;
++using System.Windows.Documents;
++using System.Windows.Input;
++using System.Windows.Media;
++using System.Windows.Media.Imaging;
++using System.Windows.Navigation;
++using System.Windows.Shapes;
++
++namespace CameraControl.Plugins.windows
++{
++    /// <summary>
++    /// Interaction logic for UserControl1.xaml
++    /// </summary>
++    public partial class DialogPrompt// : Window
++    {
++        public DialogPrompt(String prompt)
++        {
++            InitializeComponent();
++            txtPromptMessage.Text = prompt;
++        }
++
++        public DialogPrompt()
++        {
++            InitializeComponent();
++        }
++
++        private void Window_Loaded(object sender, RoutedEventArgs e)
++        {
++            Dispatcher.BeginInvoke(new Action(delegate { Jarloo.WindowExtensions.FlashWindow(this); }));
++        }
++
++        private void on_Okay(object sender, RoutedEventArgs e)
++        {
++            DialogResult = true;
++        }
++    }
++}
+Index: CameraControl.Plugins/windows/PasswordPrompt.xaml
+===================================================================
+--- CameraControl.Plugins/windows/PasswordPrompt.xaml	(revision 0)
++++ CameraControl.Plugins/windows/PasswordPrompt.xaml	(working copy)
+@@ -0,0 +1,31 @@
++﻿<Controls:MetroWindow x:Class="CameraControl.Plugins.windows.PasswordPrompt"
++        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
++        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Password:" Height="151" Width="350" Loaded="Window_Loaded" ResizeMode="NoResize" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" WindowStyle="None"
++        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
++        xmlns:Classes="clr-namespace:CameraControl.Core.Classes;assembly=CameraControl.Core"
++        xmlns:T="clr-namespace:CameraControl.Core.Translation;assembly=CameraControl.Core"
++        xmlns:sys="clr-namespace:System;assembly=mscorlib"
++        WindowStartupLocation="CenterScreen" Topmost="True">
++    <Window.Resources>
++        <ResourceDictionary>
++            <ResourceDictionary.MergedDictionaries>
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.AnimatedSingleRowTabControl.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/CameraControl;component/Styles/Wpf.Toolkit.Extended.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
++            </ResourceDictionary.MergedDictionaries>
++        </ResourceDictionary>
++    </Window.Resources>
++    
++    <Grid>
++        <TextBlock Name="txtPromptMessage" Margin="2" VerticalAlignment="Top"/>
++        <PasswordBox Name="txtPromptResult" Width="200" Height="23" />
++        <Button Content="OK" Width="50" Height="23" HorizontalAlignment="Right" VerticalAlignment="Bottom" Click="on_Okay" Margin="2"/>
++    </Grid>
++</Controls:MetroWindow>
+Index: CameraControl.Plugins/windows/PasswordPrompt.xaml.cs
+===================================================================
+--- CameraControl.Plugins/windows/PasswordPrompt.xaml.cs	(revision 0)
++++ CameraControl.Plugins/windows/PasswordPrompt.xaml.cs	(working copy)
+@@ -0,0 +1,48 @@
++﻿using System;
++using System.Collections.Generic;
++using System.Linq;
++using System.Text;
++using System.Windows;
++using System.Windows.Controls;
++using System.Windows.Data;
++using System.Windows.Documents;
++using System.Windows.Input;
++using System.Windows.Media;
++using System.Windows.Media.Imaging;
++using System.Windows.Navigation;
++using System.Windows.Shapes;
++
++namespace CameraControl.Plugins.windows
++{
++    /// <summary>
++    /// Interaction logic for UserControl1.xaml
++    /// </summary>
++    public partial class PasswordPrompt// : Window
++    {
++        public PasswordPrompt(String prompt)
++        {
++            InitializeComponent();
++            txtPromptMessage.Text = prompt;
++        }
++
++        public PasswordPrompt()
++        {
++            InitializeComponent();
++        }
++
++        public String ResponseString
++        {
++            get { return txtPromptResult.Password; }
++        }
++
++        private void Window_Loaded(object sender, RoutedEventArgs e)
++        {
++
++        }
++
++        private void on_Okay(object sender, RoutedEventArgs e)
++        {
++            DialogResult = true;
++        }
++    }
++}
+Index: CameraControl/CameraControl.csproj
+===================================================================
+--- CameraControl/CameraControl.csproj	(revision 600)
++++ CameraControl/CameraControl.csproj	(working copy)
+@@ -16,6 +16,7 @@
+     <FileAlignment>512</FileAlignment>
+     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+     <WarningLevel>4</WarningLevel>
++    <IsWebBootstrapper>false</IsWebBootstrapper>
+     <PublishUrl>publish\</PublishUrl>
+     <Install>true</Install>
+     <InstallFrom>Disk</InstallFrom>
+@@ -28,7 +29,6 @@
+     <MapFileExtensions>true</MapFileExtensions>
+     <ApplicationRevision>0</ApplicationRevision>
+     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+-    <IsWebBootstrapper>false</IsWebBootstrapper>
+     <UseApplicationTrust>false</UseApplicationTrust>
+     <BootstrapperEnabled>true</BootstrapperEnabled>
+   </PropertyGroup>
+@@ -235,6 +235,9 @@
+     <Compile Include="windows\CameraPropertyWnd.xaml.cs">
+       <DependentUpon>CameraPropertyWnd.xaml</DependentUpon>
+     </Compile>
++    <Compile Include="windows\EditDefaultSession.xaml.cs">
++      <DependentUpon>EditDefaultSession.xaml</DependentUpon>
++    </Compile>
+     <Compile Include="windows\CreateTimeLapseWnd.xaml.cs">
+       <DependentUpon>CreateTimeLapseWnd.xaml</DependentUpon>
+     </Compile>
+@@ -254,6 +257,9 @@
+       <DependentUpon>FullScreenWnd.xaml</DependentUpon>
+     </Compile>
+     <Compile Include="windows\LiveViewManager.cs" />
++    <Compile Include="windows\LiveViewSimpleWnd.xaml.cs">
++      <DependentUpon>LiveViewSimpleWnd.xaml</DependentUpon>
++    </Compile>
+     <Compile Include="windows\LiveViewWnd.xaml.cs">
+       <DependentUpon>LiveViewWnd.xaml</DependentUpon>
+     </Compile>
+@@ -375,6 +381,10 @@
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+     </Page>
++    <Page Include="windows\EditDefaultSession.xaml">
++      <Generator>MSBuild:Compile</Generator>
++      <SubType>Designer</SubType>
++    </Page>
+     <Page Include="windows\CreateTimeLapseWnd.xaml">
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+@@ -399,6 +409,10 @@
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+     </Page>
++    <Page Include="windows\LiveViewSimpleWnd.xaml">
++      <Generator>MSBuild:Compile</Generator>
++      <SubType>Designer</SubType>
++    </Page>
+     <Page Include="windows\LiveViewWnd.xaml">
+       <SubType>Designer</SubType>
+       <Generator>MSBuild:Compile</Generator>
+Index: CameraControl/StartUpWindow.xaml.cs
+===================================================================
+--- CameraControl/StartUpWindow.xaml.cs	(revision 600)
++++ CameraControl/StartUpWindow.xaml.cs	(working copy)
+@@ -97,6 +97,7 @@
+ 
+             ServiceProvider.WindowsManager = new WindowsManager();
+             ServiceProvider.WindowsManager.Add(new FullScreenWnd());
++            ServiceProvider.WindowsManager.Add(new EditDefaultSession());
+             ServiceProvider.WindowsManager.Add(new LiveViewManager());
+             ServiceProvider.WindowsManager.Add(new MultipleCameraWnd());
+             ServiceProvider.WindowsManager.Add(new CameraPropertyWnd());
+@@ -126,17 +127,36 @@
+ 
+         private void StartApplication()
+         {
+-            if (ServiceProvider.Settings.SelectedMainForm != _basemainwindow.DisplayName)
++            IMainWindowPlugin mainWindowPlugin = _basemainwindow;
++            
++            var args = Environment.GetCommandLineArgs();
++            String wndName = "";
++            foreach (string arg in args)
++                if (arg.Length > 5 && arg.Substring(0, 5) == "-wnd=") 
++                    wndName = arg.Substring(5);
++
++            if (!String.IsNullOrEmpty(wndName))
+             {
+-                SelectorWnd wnd = new SelectorWnd();
+-                wnd.ShowDialog();
++                foreach (IMainWindowPlugin windowPlugin in ServiceProvider.PluginManager.MainWindowPlugins)
++                {
++                    if (windowPlugin.DisplayName == wndName)
++                        mainWindowPlugin = windowPlugin;
++                }
+             }
+-            IMainWindowPlugin mainWindowPlugin = _basemainwindow;
+-            foreach (IMainWindowPlugin windowPlugin in ServiceProvider.PluginManager.MainWindowPlugins)
++            else
+             {
+-                if (windowPlugin.DisplayName == ServiceProvider.Settings.SelectedMainForm)
+-                    mainWindowPlugin = windowPlugin;
++                if (ServiceProvider.Settings.SelectedMainForm != _basemainwindow.DisplayName)
++                {
++                    SelectorWnd wnd = new SelectorWnd();
++                    wnd.ShowDialog();
++                }
++                foreach (IMainWindowPlugin windowPlugin in ServiceProvider.PluginManager.MainWindowPlugins)
++                {
++                    if (windowPlugin.DisplayName == ServiceProvider.Settings.SelectedMainForm)
++                        mainWindowPlugin = windowPlugin;
++                }
+             }
++
+             mainWindowPlugin.Show();
+             if (mainWindowPlugin is Window)
+                 ((Window) mainWindowPlugin).Activate();
+Index: CameraControl/windows/EditDefaultSession.xaml
+===================================================================
+--- CameraControl/windows/EditDefaultSession.xaml	(revision 0)
++++ CameraControl/windows/EditDefaultSession.xaml	(working copy)
+@@ -0,0 +1,123 @@
++<Controls:MetroWindow x:Class="CameraControl.windows.EditDefaultSession"
++        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
++        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="{T:TranslateExtension SessionWindowTitle}" Height="452" Width="416" Loaded="Window_Loaded" ResizeMode="NoResize" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit" WindowStyle="None"
++        xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
++        xmlns:Classes="clr-namespace:CameraControl.Core.Classes;assembly=CameraControl.Core"
++        xmlns:T="clr-namespace:CameraControl.Core.Translation;assembly=CameraControl.Core"
++        xmlns:sys="clr-namespace:System;assembly=mscorlib"
++        WindowStartupLocation="CenterScreen" Topmost="True">
++    <Window.DataContext>
++        <Classes:PhotoSession/>
++    </Window.DataContext>
++    <Window.Resources>
++        <ResourceDictionary x:Key="Styles">
++            <ResourceDictionary.MergedDictionaries>
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.AnimatedSingleRowTabControl.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/CameraControl;component/Styles/Wpf.Toolkit.Extended.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseLight.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
++            </ResourceDictionary.MergedDictionaries>
++
++            <ObjectDataProvider x:Key="QuickTagOptionsProvider" MethodName="GetValues" ObjectType="{x:Type sys:Enum}" >
++                <ObjectDataProvider.MethodParameters>
++                    <x:Type TypeName="Classes:QuickTagOptions" />
++                </ObjectDataProvider.MethodParameters>
++            </ObjectDataProvider>
++            
++        </ResourceDictionary>
++    </Window.Resources>
++    <Controls:MetroWindow.WindowCommands>
++        <Controls:WindowCommands>
++            <Button Content="{T:TranslateExtension ButtonHelp}" Name="btn_help" Click="btn_help_Click" />
++        </Controls:WindowCommands>
++    </Controls:MetroWindow.WindowCommands>
++    <Grid>
++        <Grid.RowDefinitions>
++            <RowDefinition Height="232*" />
++            <RowDefinition Height="46*" />
++        </Grid.RowDefinitions>
++        <TabControl>
++            <TabItem Header="{T:TranslateExtension LabelGeneral}">
++                <StackPanel Margin="5">
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="{T:TranslateExtension LabelSessonName}" Width="150" HorizontalContentAlignment="Right" />
++                        <TextBox Text="{Binding Path=Name}" Width="200"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="{T:TranslateExtension LabelFolder}" Width="150" HorizontalContentAlignment="Right" />
++                        <TextBox Text="{Binding Path=Folder}" Width="200"/>
++                        <Button Name="btn_browse" Content=" ... " Click="btn_browse_Click" />
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="{T:TranslateExtension LabelFileNameTemplate}" Width="150" HorizontalContentAlignment="Right" />
++                        <TextBox Text="{Binding Path=FileNameTemplate}" Width="200" ToolTip="{T:TranslateExtension LabelFileNameTemplateToolTip}"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="{T:TranslateExtension LabelCounter}" Width="150" HorizontalContentAlignment="Right" />
++                        <xctk:IntegerUpDown Value="{Binding Path=Counter}" Width="200" Minimum="0"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="{T:TranslateExtension LabelLeadingZeros}" Width="150" HorizontalContentAlignment="Right" />
++                        <xctk:IntegerUpDown Value="{Binding Path=LeadingZeros}" Width="200" Minimum="1" Maximum="10"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="Barcode Length :" Width="150" HorizontalContentAlignment="Right" />
++                        <StackPanel Orientation="Horizontal">
++                            <Label Content="Min" Width="50" HorizontalContentAlignment="Right" />
++                            <xctk:IntegerUpDown Name="iud_LengthMin" Value="{Binding Path=BarcodeLengthMin}" Width="50" Minimum="0" Maximum="256" />
++                            <Label Content="Max" Width="50" HorizontalContentAlignment="Right" />
++                            <xctk:IntegerUpDown Name="iud_LengthMax" Value="{Binding Path=BarcodeLengthMax}" Width="50" Minimum="0" Maximum="256" />
++                        </StackPanel>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="Delimiter :" Width="150" HorizontalContentAlignment="Right" />
++                        <ComboBox Name="cmb_Delimiter" Width="200" SelectedValuePath="Content" SelectedValue="{Binding Path=BarcodeDelimiter, Mode=TwoWay}">
++                            <ComboBoxItem>-</ComboBoxItem>
++                            <ComboBoxItem>_</ComboBoxItem>
++                            <ComboBoxItem>.</ComboBoxItem>
++                        </ComboBox>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="Allow Quicktags :" Width="150" HorizontalContentAlignment="Right" />
++                        <ComboBox Name="cmb_QuickTags" Width="200" ItemsSource="{Binding Source={StaticResource QuickTagOptionsProvider}}" SelectedItem="{Binding Path=QuickTagOption, Mode=TwoWay}">
++                        </ComboBox>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <Label Content="Quick Tag :" Width="150" HorizontalContentAlignment="Right" />
++                        <TextBox Name="txt_QuickTag" Text="{Binding Path=QuickTag}" KeyUp="on_txt_QuickTag_KeyUp" MaxLength="3" Width="200"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <CheckBox Content="{T:TranslateExtension LabelUseOriginal}" ToolTip="{T:TranslateExtension LabelUseOriginalToolTip}" IsChecked="{Binding Path=UseOriginalFilename}"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <CheckBox Content="{T:TranslateExtension LabelUseCameraCounter}" ToolTip="" IsChecked="{Binding Path=UseCameraCounter}"/>
++                    </StackPanel>
++                    <StackPanel Orientation="Horizontal">
++                        <CheckBox Content="{T:TranslateExtension LabelDownloadJpgOnly}" ToolTip="{T:TranslateExtension LabelDownloadJpgOnlyToolTip}" IsChecked="{Binding Path=DownloadOnlyJpg}" />
++                    </StackPanel>
++                </StackPanel>
++            </TabItem>
++            <TabItem Header="{T:TranslateExtension LabelTags}">
++                <Grid>
++                    <Grid.ColumnDefinitions>
++                        <ColumnDefinition Width="250" />
++                        <ColumnDefinition Width="100" />
++                    </Grid.ColumnDefinitions>
++                    <ListBox Name="lst_tags" Margin="3" ItemsSource="{Binding Path=Tags}"/>
++                    <Button Content="{T:TranslateExtension ButtonAdd}" Grid.Column="1" Height="23" Margin="20,40,20,0" Name="btn_add_tag" VerticalAlignment="Top" Click="btn_add_tag_Click" />
++                    <Button Content="{T:TranslateExtension ButtonDelete}" Grid.Column="1" Height="23" Margin="20,80,20,0" Name="btn_del_tag" VerticalAlignment="Top" Click="btn_del_tag_Click" />
++                    <Button Content="{T:TranslateExtension ButtonEdit}" Grid.Column="1" Height="23" Margin="20,120,20,0" Name="btn_edit_tag" VerticalAlignment="Top" Click="btn_edit_tag_Click" />
++                </Grid>
++            </TabItem>
++        </TabControl>
++        <Button Content="{T:TranslateExtension ButtonOk}" Grid.Row="1" HorizontalAlignment="Left" Margin="12,0,0,12" Name="button1" Width="75" Height="23" VerticalAlignment="Bottom" Click="button1_Click" IsDefault="True" />
++        <Button Content="Defaults" Grid.Row="1" HorizontalAlignment="Center" Margin="12,0,0,12" Name="btn_Defaults" Width="75" Height="23" VerticalAlignment="Bottom" Click="on_btn_Defaults" />
++        <Button Content="{T:TranslateExtension ButtonCancel}" Grid.Row="1" Margin="0,0,12,12" Name="button2" HorizontalAlignment="Right" Width="75" Height="23" VerticalAlignment="Bottom" Click="button2_Click" IsCancel="True" />
++    </Grid>
++</Controls:MetroWindow>
+Index: CameraControl/windows/EditDefaultSession.xaml.cs
+===================================================================
+--- CameraControl/windows/EditDefaultSession.xaml.cs	(revision 0)
++++ CameraControl/windows/EditDefaultSession.xaml.cs	(working copy)
+@@ -0,0 +1,228 @@
++using System;
++using System.Windows;
++using CameraControl.Classes;
++using CameraControl.Core;
++using CameraControl.Core.Classes;
++using CameraControl.Core.Interfaces;
++using System.IO;
++using System.Xml;
++using System.Collections.Generic;
++using System.Text.RegularExpressions;
++using System.Text;
++
++namespace CameraControl.windows
++{
++  /// <summary>
++  /// Interaction logic for EditSession.xaml
++  /// </summary>
++  public partial class EditDefaultSession : IWindow
++  {
++    public PhotoSession Session { get; set; }
++
++    public EditDefaultSession()
++    {
++      Session = ServiceProvider.Settings.DefaultSession;
++      Session.BeginEdit();
++      InitializeComponent();
++      DataContext = Session;
++      ServiceProvider.Settings.ApplyTheme(this);
++    }
++
++    private void btn_browse_Click(object sender, RoutedEventArgs e)
++    {
++      var dialog = new System.Windows.Forms.FolderBrowserDialog();
++      dialog.SelectedPath = Session.Folder;
++      if(dialog.ShowDialog()==System.Windows.Forms.DialogResult.OK)
++      {
++        Session.Folder = dialog.SelectedPath;
++      }
++    }
++
++    private void Window_Loaded(object sender, RoutedEventArgs e)
++    {
++        iud_LengthMax.ValueChanged += on_iud_LengthMax_Change;
++        iud_LengthMin.ValueChanged += on_iud_LengthMin_Change;
++    }
++
++    private void button1_Click(object sender, RoutedEventArgs e)
++    {
++      Session.EndEdit();
++      if (File.Exists(ServiceProvider.Settings.DefaultSession.ConfigFile))
++          File.Delete(ServiceProvider.Settings.DefaultSession.ConfigFile);
++      ServiceProvider.Settings.Save(ServiceProvider.Settings.DefaultSession);
++      Hide();
++    }
++
++    private void button2_Click(object sender, RoutedEventArgs e)
++    {
++      Session.CancelEdit();
++      Hide();
++    }
++
++    private void btn_add_tag_Click(object sender, RoutedEventArgs e)
++    {
++      TagItem item = new TagItem();
++      EditTagWnd wnd = new EditTagWnd(item);
++      if (wnd.ShowDialog() == true)
++      {
++        Session.Tags.Add(item);
++      }
++    }
++
++    private void btn_del_tag_Click(object sender, RoutedEventArgs e)
++    {
++      TagItem item = lst_tags.SelectedItem as TagItem;
++      if (item != null)
++      {
++        Session.Tags.Remove(item);
++      }
++    }
++
++    private void btn_edit_tag_Click(object sender, RoutedEventArgs e)
++    {
++      TagItem item = lst_tags.SelectedItem as TagItem;
++      if (item != null)
++      {
++        EditTagWnd wnd = new EditTagWnd(item);
++        wnd.ShowDialog();
++      }
++    }
++
++    private void btn_help_Click(object sender, RoutedEventArgs e)
++    {
++      HelpProvider.Run(HelpSections.Session);
++    }
++
++    public void LoadDefaults(bool Force=false) 
++    {
++        if ( (!Force) && ServiceProvider.Settings.DefaultsWereLoaded )
++            return;
++
++        Session.Name = "Default";
++        Session.FileNameTemplate = "$B$-$Qt$UTime";
++        Session.UseOriginalFilename = false;
++        Session.BarcodeRegex = @"^[a-zA-Z0-9\(\)_\-\.]*$";
++        Session.BarcodeDelimiter = "-";
++        Session.BarcodeLengthMax = 32;
++        Session.BarcodeLengthMin = 8;
++        Session.QuickTagOption = QuickTagOptions.Set_From_Main;
++
++        string SaveFolder = "C:\\Proshots\\Dropfolder";
++        try
++        {
++            XmlTextReader reader = new XmlTextReader("C:\\Proshots\\config.xml");
++            while (reader.Read())
++                if (reader.Name == "dropfolder" && reader.NodeType == XmlNodeType.Element)
++                {
++                    reader.Read();
++                    SaveFolder = reader.Value;
++                    break;
++                }
++        }
++        catch (Exception ex)
++        {
++            CameraControl.Devices.Log.Debug("Error loading Proshots config: " + ex.Message);
++        }
++        Session.Folder = SaveFolder;
++
++        if (File.Exists(ServiceProvider.Settings.DefaultSession.ConfigFile))
++            File.Delete(ServiceProvider.Settings.DefaultSession.ConfigFile);
++        ServiceProvider.Settings.Save(Session);
++
++        if(String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
++        {
++            StringBuilder builder = new StringBuilder();
++            var random = new Random();
++            for (int i = 0; i < 8; i++)
++                builder.Append( Convert.ToChar(Convert.ToInt32(Math.Floor(26 * random.NextDouble() + 65))) );
++            ServiceProvider.Settings.SettingsPassword = builder.ToString();
++        }
++        ServiceProvider.Settings.DefaultsWereLoaded = true;
++        ServiceProvider.Settings.Save();
++
++        ServiceProvider.Settings.DefaultsWereLoaded = true;
++    }
++
++    #region Implementation of IWindow
++
++    public void ExecuteCommand(string cmd, object param)
++    {
++        switch (cmd)
++        {
++            case WindowsCmdConsts.EditSessionWnd_Firstrun:
++                Dispatcher.BeginInvoke(new Action(delegate
++                {
++                    LoadDefaults(true);
++                }));
++                break;
++            case WindowsCmdConsts.EditSessionWnd_Show:
++                Dispatcher.BeginInvoke(new Action(delegate
++                {
++                    Show();
++                    LoadDefaults();
++                    Session.BeginEdit();
++                    Activate();
++                    Topmost = true;
++                    Topmost = false;
++                    Focus();
++                }));
++                break;
++            case WindowsCmdConsts.EditSessionWnd_Hide:
++                Dispatcher.Invoke(new Action(delegate
++                {   
++                    Hide();
++                }));
++                break;
++            case CmdConsts.All_Close:
++                Dispatcher.Invoke(new Action(delegate
++                {
++                    Hide();
++                    CancelClose = false;
++                    Close();
++                }));
++                break;
++        }
++    }
++
++    private bool CancelClose = true;
++
++    protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
++    {
++        base.OnClosing(e);
++        e.Cancel = CancelClose;
++        //Session.CancelEdit();
++        Hide();
++    }
++
++    #endregion
++
++    private void on_btn_Defaults(object sender, RoutedEventArgs e)
++    {
++        LoadDefaults(true);
++    }
++
++    private void on_iud_LengthMin_Change(object sender, RoutedPropertyChangedEventArgs<object> e)
++    {
++        if ((iud_LengthMax.Value ?? int.MaxValue) < (iud_LengthMin.Value ?? 0))
++            iud_LengthMax.Value = (iud_LengthMin.Value ?? 0);
++    }
++
++    private void on_iud_LengthMax_Change(object sender, RoutedPropertyChangedEventArgs<object> e)
++    {
++        if ((iud_LengthMin.Value ?? 0) > (iud_LengthMax.Value ?? int.MaxValue))
++            iud_LengthMin.Value = (iud_LengthMax.Value ?? int.MaxValue);
++    }
++
++    private void on_txt_QuickTag_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
++    {
++        var QTRegex = @"[^a-zA-Z]{1}";
++        Session.QuickTag = txt_QuickTag.Text;    // Expedite update
++        var pos = txt_QuickTag.CaretIndex;
++        var matchesBefore = Regex.Matches(Session.QuickTag.Substring(0, pos), QTRegex).Count;
++        Session.QuickTag = Regex.Replace(Session.QuickTag, QTRegex, "");
++        txt_QuickTag.Text = Session.QuickTag;
++        txt_QuickTag.CaretIndex = pos - matchesBefore;
++    }
++
++  }
++}
+Index: CameraControl/windows/EditSession.xaml.cs
+===================================================================
+--- CameraControl/windows/EditSession.xaml.cs	(revision 600)
++++ CameraControl/windows/EditSession.xaml.cs	(working copy)
+@@ -1,3 +1,4 @@
++using System;
+ using System.Windows;
+ using CameraControl.Classes;
+ using CameraControl.Core;
+@@ -2,2 +3,3 @@
+ using CameraControl.Core.Classes;
++using CameraControl.Core.Interfaces;
+ 
+@@ -83,5 +85,39 @@
+     }
+ 
+ 
++    #region Implementation of IWindow
++
++    public void ExecuteCommand(string cmd, object param)
++    {
++        switch (cmd)
++        {
++            case WindowsCmdConsts.EditSessionWnd_Show:
++                Dispatcher.BeginInvoke(new Action(delegate
++                {
++                    Show();
++                    Activate();
++                    Topmost = true;
++                    Topmost = false;
++                    Focus();
++                }));
++                break;
++            case WindowsCmdConsts.EditSessionWnd_Hide:
++                Dispatcher.Invoke(new Action(delegate
++                {   
++                    Hide();
++                }));
++                break;
++            case CmdConsts.All_Close:
++                Dispatcher.Invoke(new Action(delegate
++                {
++                    Hide();
++                    Close();
++                }));
++                break;
++        }
++    }
++
++    #endregion
++
+   }
+ }
+Index: CameraControl/windows/FullScreenWnd.xaml.cs
+===================================================================
+--- CameraControl/windows/FullScreenWnd.xaml.cs	(revision 600)
++++ CameraControl/windows/FullScreenWnd.xaml.cs	(working copy)
+@@ -68,12 +68,38 @@
+       //RaiseEvent(e);
+     }
+ 
++    private void worker_DoWork_Synch()
++    {
++        if (ServiceProvider.Settings.SelectedBitmap.FileItem == null)
++            return;
++        bool fullres = true;// e.Argument is bool && (bool)e.Argument;
++        ServiceProvider.Settings.ImageLoading = fullres || !ServiceProvider.Settings.SelectedBitmap.FileItem.IsLoaded;
++        BitmapLoader.Instance.GenerateCache(ServiceProvider.Settings.SelectedBitmap.FileItem);
++        ServiceProvider.Settings.SelectedBitmap.DisplayImage =
++            BitmapLoader.Instance.LoadImage(ServiceProvider.Settings.SelectedBitmap.FileItem, fullres);
++        BitmapLoader.Instance.Highlight(ServiceProvider.Settings.SelectedBitmap,
++                                        ServiceProvider.Settings.HighlightUnderExp,
++                                        ServiceProvider.Settings.HighlightOverExp);
++        BitmapLoader.Instance.SetData(ServiceProvider.Settings.SelectedBitmap, ServiceProvider.Settings.SelectedBitmap.FileItem);
++        ServiceProvider.Settings.SelectedBitmap.FullResLoaded = fullres;
++        ServiceProvider.Settings.ImageLoading = false;
++        //OnImageLoaded();
++        GC.Collect();
++    }
++
+     #region Implementation of IWindow
+ 
+     public void ExecuteCommand(string cmd, object param)
+     {
+       switch (cmd)
+       {
++        case WindowsCmdConsts.Select_Image:
++              Dispatcher.BeginInvoke(new Action(delegate
++                  {
++                      ServiceProvider.Settings.SelectedBitmap.SetFileItem((FileItem)param);
++                      worker_DoWork_Synch();
++                  }));
++              break;
+         case WindowsCmdConsts.FullScreenWnd_Show:
+           Dispatcher.BeginInvoke(new Action(delegate
+                                          {
+@@ -82,21 +108,31 @@
+                                            Topmost = true;
+                                            Topmost = false;
+                                            Focus();
+-
+                                          }));
+           break;
++        case WindowsCmdConsts.FullScreenWnd_ShowMin:
++          Dispatcher.BeginInvoke(new Action(delegate
++                                          {
++                                              Show();
++                                              Activate();
++                                              Topmost = true;
++                                              Topmost = false;
++                                              Focus();
++                                              this.WindowState = System.Windows.WindowState.Normal;
++                                          }));
++          break;
+         case WindowsCmdConsts.FullScreenWnd_ShowTimed:
+           Dispatcher.BeginInvoke(new Action(delegate
+-          {
+-            Show();
+-            Activate();
+-            Topmost = true;
+-            Topmost = false;
+-            Focus();
+-            _timer.Stop();
+-            _timer.Interval = ServiceProvider.Settings.PreviewSeconds * 1000;
+-            _timer.Start();
+-          }));
++                                          {
++                                            Show();
++                                            Activate();
++                                            Topmost = true;
++                                            Topmost = false;
++                                            Focus();
++                                            _timer.Stop();
++                                            _timer.Interval = ServiceProvider.Settings.PreviewSeconds * 1000;
++                                            _timer.Start();
++                                          }));
+           break;
+         case WindowsCmdConsts.FullScreenWnd_Hide:
+           Dispatcher.Invoke(new Action(delegate
+Index: CameraControl/windows/LiveViewManager.cs
+===================================================================
+--- CameraControl/windows/LiveViewManager.cs	(revision 600)
++++ CameraControl/windows/LiveViewManager.cs	(working copy)
+@@ -19,12 +19,12 @@
+ 
+         #region Implementation of IWindow
+ 
+-        private Dictionary<object, LiveViewWnd> _register;
++        private Dictionary<object, IWindow> _register;
+         private static Dictionary<ICameraDevice, bool> _recordtoRam;
+ 
+         public LiveViewManager()
+         {
+-            _register = new Dictionary<object, LiveViewWnd>();
++            _register = new Dictionary<object, IWindow>();
+             _recordtoRam = new Dictionary<ICameraDevice, bool>();
+         }
+ 
+@@ -46,6 +46,18 @@
+                     }
+                     _register[param].ExecuteCommand(cmd, param);
+                     break;
++                case WindowsCmdConsts.LiveViewSimpleWnd_Show:
++                    if (!_register.ContainsKey(param))
++                    {
++                        Application.Current.Dispatcher.Invoke(new Action(delegate
++                                                                            {
++                                                                                var wnd = new LiveViewSimpleWnd();
++                                                                                ServiceProvider.Settings.ApplyTheme(wnd);
++                                                                                _register.Add(param, wnd);
++                                                                            }));
++                    }
++                    _register[param].ExecuteCommand(cmd, param);
++                    break;
+                 case WindowsCmdConsts.LiveViewWnd_Hide:
+                     if (_register.ContainsKey(param))
+                         _register[param].ExecuteCommand(cmd, param);
+Index: CameraControl/windows/LiveViewSimpleWnd.xaml
+===================================================================
+--- CameraControl/windows/LiveViewSimpleWnd.xaml	(revision 0)
++++ CameraControl/windows/LiveViewSimpleWnd.xaml	(working copy)
+@@ -0,0 +1,61 @@
++﻿<Controls:MetroWindow x:Class="CameraControl.windows.LiveViewSimpleWnd"
++        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
++        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="{T:TranslateExtension LiveViewWindowTitle}" Height="580" Width="758" Loaded="Window_Loaded" Closed="Window_Closed" Closing="Window_Closing" xmlns:my="clr-namespace:CameraControl.windows"
++        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
++        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
++        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
++        xmlns:Core="clr-namespace:CameraControl.Core;assembly=CameraControl.Core"
++                      xmlns:Controls="clr-namespace:MahApps.Metro.Controls;assembly=MahApps.Metro"
++                      xmlns:local="clr-namespace:CameraControl.Controls"
++                      xmlns:T="clr-namespace:CameraControl.Core.Translation;assembly=CameraControl.Core"
++                      xmlns:Devices="clr-namespace:CameraControl.Devices;assembly=CameraControl.Devices"
++                      xmlns:Controls1="clr-namespace:CameraControl.Controls;assembly=CameraControl.Core" mc:Ignorable="d" d:DataContext="{d:DesignData }" Topmost="{Binding ElementName=chk_top,Path=IsChecked}"
++                      ShowMinButton="False" >
++    <Window.Resources>
++        <ResourceDictionary>
++            <ResourceDictionary.MergedDictionaries>
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Colours.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Fonts.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Controls.xaml" />
++                <ResourceDictionary Source="pack://application:,,,/CameraControl;component/Styles/Wpf.Toolkit.Extended.xaml" />
++                <ResourceDictionary Source="../Resources/Icons.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Colours.xaml"/>-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/VS/Styles.xaml"/>-->
++                <ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/Blue.xaml" />
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/Accents/BaseDark.xaml" />-->
++                <!--<ResourceDictionary Source="pack://application:,,,/MahApps.Metro;component/Styles/FlatButton.xaml" />-->
++            </ResourceDictionary.MergedDictionaries>
++        </ResourceDictionary>
++    </Window.Resources>
++    <Controls:MetroWindow.WindowCommands>
++        <Controls:WindowCommands>
++            <Button Content="{T:TranslateExtension ButtonHelp}" Name="btn_help" Click="btn_help_Click" />
++        </Controls:WindowCommands>
++    </Controls:MetroWindow.WindowCommands>
++
++    <Grid>
++        <Grid.RowDefinitions>
++            <RowDefinition Height="570*" />
++            <RowDefinition Height="35" />
++        </Grid.RowDefinitions>
++        <Grid.ColumnDefinitions>
++            <ColumnDefinition Width="100*" />
++        </Grid.ColumnDefinitions>
++        
++        <Image Stretch="Uniform" Grid.Column="0" Source="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=SelectedBitmap.DisplayImage}" Name="img_preview" />
++        <Image Name="image1" Stretch="Uniform" Grid.Column="0" MouseDown="image1_MouseDown" Opacity="{Binding ElementName=slider_transparent,Path=Value}" />
++        <Canvas Grid.Column="0" Name="canvas" Background="{x:Null}" Margin="0,0,0,0">
++            <Label Canvas.Left="0" Canvas.Top="0" Content="REC" Height="41" Name="lbl_rec" FontSize="20" FontWeight="Bold" Foreground="Red" Width="52"></Label>
++        </Canvas>
++        
++        <Button Content="{T:TranslateExtension ButtonCapture}" VerticalAlignment="Top" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Left" Margin="5,5,5,5" Name="button2" Height="25" Width="75" Click="button2_Click" />
++        
++        <Grid Margin="92,0,100,0" Grid.Column="0" Grid.Row="0" Name="grid_wait" Visibility="Hidden">
++            <ProgressBar IsIndeterminate="True" Height="20"/>
++            <Label Content="{T:TranslateExtension LabelWaitingForDevice}" HorizontalContentAlignment="Center" />
++        </Grid>
++        
++        <Label Content="{Binding Source={x:Static Member=Devices:StaticHelper.Instance}, Path=SystemMessage}" FontWeight="Bold" HorizontalContentAlignment="Right" Margin="100,0,5,0" Grid.Row="1" Grid.Column="0" Padding="0" Grid.ColumnSpan="2" />
++        
++    </Grid>
++</Controls:MetroWindow>
+Index: CameraControl/windows/LiveViewSimpleWnd.xaml.cs
+===================================================================
+--- CameraControl/windows/LiveViewSimpleWnd.xaml.cs	(revision 0)
++++ CameraControl/windows/LiveViewSimpleWnd.xaml.cs	(working copy)
+@@ -0,0 +1,594 @@
++﻿using System;
++using System.ComponentModel;
++using System.Drawing;
++using System.IO;
++using System.Linq;
++//using System.Threading;
++using System.Threading;
++using System.Windows;
++using System.Windows.Controls;
++using System.Windows.Input;
++using System.Windows.Media;
++using System.Windows.Media.Imaging;
++using System.Windows.Shapes;
++using AForge;
++using AForge.Imaging;
++using AForge.Imaging.Filters;
++using AForge.Vision.Motion;
++using CameraControl.Classes;
++using CameraControl.Core;
++using CameraControl.Core.Classes;
++using CameraControl.Core.Interfaces;
++using CameraControl.Core.Translation;
++using CameraControl.Devices;
++using CameraControl.Devices.Classes;
++using Color = System.Windows.Media.Color;
++using Point = System.Windows.Point;
++using Rectangle = System.Windows.Shapes.Rectangle;
++using Timer = System.Timers.Timer;
++
++namespace CameraControl.windows
++{
++    /// <summary>
++    /// Interaction logic for LiveViewWnd.xaml
++    /// </summary>
++    public partial class LiveViewSimpleWnd : IWindow, INotifyPropertyChanged
++    {
++        private const int DesiredFrameRate = 20;
++
++        private int _retries = 0;
++        private ICameraDevice selectedPortableDevice;
++        //private Rectangle _focusrect = new Rectangle();
++        private BackgroundWorker _worker = new BackgroundWorker();
++        private int _totalframes = 0;
++        private DateTime _framestart;
++        private MotionDetector _detector;
++        private DateTime _photoCapturedTime;
++        
++
++        public LiveViewData LiveViewData { get; set; }
++
++        private bool _isBusy;
++
++        public bool IsBusy
++        {
++            get { return _isBusy; }
++            set
++            {
++                _isBusy = value;
++                NotifyPropertyChanged("IsBusy");
++                NotifyPropertyChanged("IsFree");
++            }
++        }
++
++        private Timer _timer = new Timer(1000 / DesiredFrameRate);
++        private Timer _freezeTimer = new Timer();
++
++        private bool oper_in_progress = false;
++
++        public ICameraDevice SelectedPortableDevice
++        {
++            get { return this.selectedPortableDevice; }
++            set
++            {
++                if (this.selectedPortableDevice != value)
++                {
++                    this.selectedPortableDevice = value;
++                    NotifyPropertyChanged("SelectedPortableDevice");
++                }
++            }
++        }
++
++        public LiveViewSimpleWnd()
++        {
++            SelectedPortableDevice = ServiceProvider.DeviceManager.SelectedCameraDevice;
++            Init();
++        }
++
++        private void SelectedBitmap_BitmapLoaded(object sender)
++        {
++            if (ServiceProvider.Settings.PreviewLiveViewImage && IsVisible)
++            {
++                Dispatcher.Invoke(new Action(delegate
++                                               {
++                                                   ServiceProvider.Settings.SelectedBitmap.DisplayImage.Freeze();
++                                                   image1.Source = ServiceProvider.Settings.SelectedBitmap.DisplayImage;
++                                               }));
++            }
++        }
++
++        public LiveViewSimpleWnd(ICameraDevice device)
++        {
++            SelectedPortableDevice = device;
++            Init();
++        }
++
++        public void Init()
++        {
++            InitializeComponent();
++            //ThemeManager.ChangeTheme(Application.Current, ThemeManager.DefaultAccents.First(a => a.Name == "Blue"), Theme.Dark);
++            _timer.Stop();
++            _timer.AutoReset = true;
++            _timer.Elapsed += _timer_Elapsed;
++            //_focusrect.Stroke = new SolidColorBrush(Colors.Green);
++            //canvas.Children.Add(_focusrect);
++            _worker.DoWork += delegate
++                                {
++                                        GetLiveImage();
++                                };
++        }
++
++        private void _timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
++        {
++            if (_retries > 100)
++            {
++                _timer.Stop();
++
++                Dispatcher.Invoke(new ThreadStart(delegate
++                                                    {
++                                                        image1.Visibility = Visibility.Hidden;
++                                                        //chk_grid.IsChecked = false;
++                                                    }));
++                return;
++            }
++            if (!_worker.IsBusy)
++                _worker.RunWorkerAsync();
++        }
++
++        private void GetLiveImage()
++        {
++            if (oper_in_progress)
++                return;
++            oper_in_progress = true;
++            _totalframes++;
++            try
++            {
++                LiveViewData = LiveViewManager.GetLiveViewImage(SelectedPortableDevice);
++            }
++            catch (Exception)
++            {
++                _retries++;
++                oper_in_progress = false;
++                return;
++            }
++
++            if (LiveViewData == null || LiveViewData.ImageData == null)
++            {
++                _retries++;
++                oper_in_progress = false;
++                return;
++            }
++
++            Dispatcher.Invoke(new Action(delegate
++                                           {
++                                               try
++                                               {
++                                                   WriteableBitmap preview;
++                                                   if (LiveViewData != null && LiveViewData.ImageData != null)
++                                                   {
++
++                                                       MemoryStream stream = new MemoryStream(LiveViewData.ImageData,
++                                                                                              LiveViewData.ImagePosition,
++                                                                                              LiveViewData.ImageData.Length -
++                                                                                              LiveViewData.ImagePosition);
++
++                                                       using (var bmp = new Bitmap(stream))
++                                                       {
++                                                           
++                                                           preview =
++                                                               BitmapFactory.ConvertToPbgra32Format(
++                                                                   BitmapSourceConvert.ToBitmapSource(bmp));
++
++                                                           Bitmap newbmp = bmp;
++                                                           
++                                                           WriteableBitmap writeableBitmap;
++
++                                                           writeableBitmap = 
++                                                               BitmapFactory.ConvertToPbgra32Format(
++                                                                   BitmapSourceConvert.ToBitmapSource(newbmp));
++                                                           
++                                                           //DrawGrid(writeableBitmap);
++                                                           writeableBitmap.Freeze();
++                                                           image1.BeginInit();
++                                                           image1.Source = writeableBitmap;
++                                                           image1.EndInit();
++                                                       }
++                                                       stream.Close();
++                                                   }
++                                               }
++                                               catch (Exception exception)
++                                               {
++                                                   Log.Error(exception);
++                                                   _retries++;
++                                                   oper_in_progress = false;
++                                               }
++
++                                           }));
++            _retries = 0;
++            oper_in_progress = false;
++        }
++
++        private void Window_Loaded(object sender, RoutedEventArgs e)
++        {
++            //SelectedPortableDevice.StoptLiveView();
++        }
++
++        private void Window_Closed(object sender, EventArgs e)
++        {
++
++        }
++
++        private void button2_Click(object sender, RoutedEventArgs e)
++        {
++            Log.Debug("LiveView: Capture started");
++            _timer.Stop();
++            Thread.Sleep(300);
++            try
++            {
++                //selectedPortableDevice.StopLiveView();
++                SelectedPortableDevice.CapturePhotoNoAf();
++                Log.Debug("LiveView: Capture Initialization Done");
++            }
++            catch (DeviceException exception)
++            {
++                StaticHelper.Instance.SystemMessage = exception.Message;
++                Log.Error("Unable to take picture with no af", exception);
++            }
++            //_timer.Start();
++        }
++
++        private void StartLiveView()
++        {
++            if (!IsVisible)
++                return;
++            string resp = SelectedPortableDevice.GetProhibitionCondition(OperationEnum.LiveView);
++            if (string.IsNullOrEmpty(resp))
++            {
++                Thread thread = new Thread(StartLiveViewThread);
++                thread.Start();
++                thread.Join();
++            }
++            else
++            {
++                Log.Error("Error starting live view " + resp);
++                MessageBox.Show(TranslationStrings.LabelLiveViewError + "\n" + TranslationManager.GetTranslation(resp));
++                return;
++            }
++        }
++
++        private void StartLiveViewThread()
++        {
++            try
++            {
++                _totalframes = 0;
++                _framestart = DateTime.Now;
++                bool retry = false;
++                int retryNum = 0;
++                Log.Debug("LiveView: Liveview started");
++                do
++                {
++                    try
++                    {
++                        LiveViewManager.StartLiveView(SelectedPortableDevice);
++                    }
++                    catch (DeviceException deviceException)
++                    {
++                        Dispatcher.Invoke(new Action(delegate { grid_wait.Visibility = Visibility.Visible; }));
++                        if (deviceException.ErrorCode == ErrorCodes.ERROR_BUSY ||
++                            deviceException.ErrorCode == ErrorCodes.MTP_Device_Busy)
++                        {
++                            Thread.Sleep(200);
++                            if (!IsVisible)
++                                break;
++                            Log.Debug("Retry live view :" + deviceException.ErrorCode.ToString("X"));
++                            retry = true;
++                            retryNum++;
++                        }
++                        else
++                        {
++                            throw;
++                        }
++                    }
++
++                } while (retry && retryNum < 35);
++                if (IsVisible)
++                {
++                    _timer.Start();
++                    oper_in_progress = false;
++                    _retries = 0;
++                    Log.Debug("LiveView: Liveview start done");
++                }
++            }
++            catch (Exception exception)
++            {
++                Log.Error("Unable to start liveview !", exception);
++                StaticHelper.Instance.SystemMessage = "Unable to start liveview ! " + exception.Message;
++                //MessageBox.Show("Unable to start liveview !");
++                //ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Hide);
++            }
++            Dispatcher.BeginInvoke(new Action(delegate { grid_wait.Visibility = Visibility.Hidden; }));
++            Dispatcher.BeginInvoke(new Action(delegate { image1.Visibility = Visibility.Visible; }));
++        }
++
++        private void StopLiveView()
++        {
++            Thread thread = new Thread(StopLiveViewThread);
++            thread.Start();
++        }
++
++        private void StopLiveViewThread()
++        {
++            try
++            {
++                _totalframes = 0;
++                _framestart = DateTime.Now;
++                bool retry = false;
++                int retryNum = 0;
++                Log.Debug("LiveView: Liveview stopping");
++                do
++                {
++                    try
++                    {
++                        LiveViewManager.StopLiveView(SelectedPortableDevice);
++                    }
++                    catch (DeviceException deviceException)
++                    {
++                        Dispatcher.Invoke(new Action(delegate { grid_wait.Visibility = Visibility.Visible; }));
++                        if (deviceException.ErrorCode == ErrorCodes.ERROR_BUSY ||
++                            deviceException.ErrorCode == ErrorCodes.MTP_Device_Busy)
++                        {
++                            Thread.Sleep(500);
++                            Log.Debug("Retry live view stop:" + deviceException.ErrorCode.ToString("X"));
++                            retry = true;
++                            retryNum++;
++                        }
++                        else
++                        {
++                            throw;
++                        }
++                    }
++
++                } while (retry && retryNum < 35);
++            }
++            catch (Exception exception)
++            {
++                Log.Error("Unable to stop liveview !", exception);
++                StaticHelper.Instance.SystemMessage = "Unable to stop liveview ! " + exception.Message;
++            }
++            Dispatcher.Invoke(new Action(delegate { grid_wait.Visibility = Visibility.Hidden; }));
++            Dispatcher.Invoke(new Action(delegate { image1.Visibility = Visibility.Hidden; }));
++        }
++
++        private void image1_MouseDown(object sender, MouseButtonEventArgs e)
++        {
++            if (e.ButtonState == MouseButtonState.Pressed && e.ChangedButton == MouseButton.Left && LiveViewData != null &&
++                LiveViewData.HaveFocusData && selectedPortableDevice.LiveViewImageZoomRatio.Value == "All")
++            {
++                try
++                {
++                    Point initialPoint = e.MouseDevice.GetPosition(image1);
++                    double xt = LiveViewData.ImageWidth / image1.ActualWidth;
++                    double yt = LiveViewData.ImageHeight / image1.ActualHeight;
++                    int posx = (int)(initialPoint.X * xt);
++                    int posy = (int)(initialPoint.Y * yt);
++                    selectedPortableDevice.Focus(posx, posy);
++                }
++                catch (Exception exception)
++                {
++                    Log.Error("Focus Error", exception);
++                    StaticHelper.Instance.SystemMessage = "Focus error: " + exception.Message;
++                }
++            }
++        }
++
++        #region Implementation of IWindow
++
++        public void ExecuteCommand(string cmd, object param)
++        {
++            switch (cmd)
++            {
++                case WindowsCmdConsts.LiveViewSimpleWnd_Show:
++                    Dispatcher.Invoke(new Action(delegate
++                                                     {
++                                                         try
++                                                         {
++
++                                                             ICameraDevice cameraparam = param as ICameraDevice;
++                                                             if (cameraparam == SelectedPortableDevice && IsVisible)
++                                                             {
++                                                                 Activate();
++                                                                 Focus();
++                                                                 return;
++                                                             }
++                                                             _freezeTimer.Interval =
++                                                                 ServiceProvider.Settings.LiveViewFreezeTimeOut*1000;
++                                                             ServiceProvider.Settings.SelectedBitmap.BitmapLoaded +=
++                                                                 SelectedBitmap_BitmapLoaded;
++                                                             SelectedPortableDevice = cameraparam;
++                                                             SelectedPortableDevice.CameraDisconnected +=
++                                                                 selectedPortableDevice_CameraDisconnected;
++                                                             CameraProperty property =
++                                                                 ServiceProvider.Settings.CameraProperties.Get(
++                                                                     SelectedPortableDevice);
++                                                             Title = TranslationStrings.LiveViewWindowTitle + " - " +
++                                                                     property.DeviceName;
++                                                             Show();
++                                                             Activate();
++                                                             //Topmost = true;
++                                                             //Topmost = false;
++                                                             Focus();
++                                                             //ServiceProvider.Settings.Manager.PhotoTakenDone += Manager_PhotoTaked;
++                                                             //Thread.Sleep(500);
++                                                             StartLiveView();
++                                                             //Thread.Sleep(500);
++                                                             SelectedPortableDevice.CaptureCompleted +=
++                                                                 selectedPortableDevice_CaptureCompleted;
++
++                                                             if (ServiceProvider.Settings.DetectionType == 0)
++                                                             {
++                                                                 _detector = new MotionDetector(
++                                                                     new TwoFramesDifferenceDetector(true),
++                                                                     new BlobCountingObjectsProcessing(
++                                                                         ServiceProvider.Settings.MotionBlockSize,
++                                                                         ServiceProvider.Settings.MotionBlockSize, true));
++                                                             }
++                                                             else
++                                                             {
++                                                                 _detector = new MotionDetector(
++                                                                     new SimpleBackgroundModelingDetector(true, true),
++                                                                     new BlobCountingObjectsProcessing(
++                                                                         ServiceProvider.Settings.MotionBlockSize,
++                                                                         ServiceProvider.Settings.MotionBlockSize, true));
++                                                             }
++                                                             _photoCapturedTime = DateTime.Now;
++                                                             _timer.Start();
++                                                         }
++                                                         catch (Exception exception)
++                                                         {
++                                                             Log.Error("Error initialize live view window ", exception);
++                                                         }
++                                                     }
++                                          ));
++                    break;
++                case WindowsCmdConsts.LiveViewWnd_Hide:
++                    Dispatcher.Invoke(new Action(delegate
++                                                   {
++                                                       Hide();
++                                                       try
++                                                       {
++                                                           _timer.Stop();
++                                                           selectedPortableDevice.CameraDisconnected -=
++                                                             selectedPortableDevice_CameraDisconnected;
++                                                           selectedPortableDevice.CaptureCompleted -=
++                                                             selectedPortableDevice_CaptureCompleted;
++                                                           ServiceProvider.Settings.SelectedBitmap.BitmapLoaded -=
++                                                             SelectedBitmap_BitmapLoaded;
++                                                           Thread.Sleep(100);
++                                                           StopLiveView();
++                                                           LiveViewData = null;
++                                                       }
++                                                       catch (Exception exception)
++                                                       {
++                                                           Log.Error("Unable to stop live view", exception);
++                                                       }
++                                                       //ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.FocusStackingWnd_Hide);
++                                                   }));
++                    break;
++                case CmdConsts.All_Close:
++                    Dispatcher.Invoke(new Action(delegate
++                                                   {
++                                                       Hide();
++                                                       Close();
++                                                   }));
++                    break;
++            }
++        }
++        private void selectedPortableDevice_CameraDisconnected(object sender, DisconnectCameraEventArgs eventArgs)
++        {
++            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Hide, SelectedPortableDevice);
++        }
++
++        private void selectedPortableDevice_CaptureCompleted(object sender, EventArgs e)
++        {
++            if (!IsVisible)
++                return;
++            _detector.Reset();
++            _photoCapturedTime = DateTime.Now;
++                IsBusy = false;
++                _timer.Start();
++                StartLiveView();
++        }
++
++        #endregion
++
++        private void Window_Closing(object sender, CancelEventArgs e)
++        {
++            if (IsVisible)
++            {
++                e.Cancel = true;
++                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewWnd_Hide, SelectedPortableDevice);
++            }
++        }
++
++
++        #region Implementation of INotifyPropertyChanged
++
++        public event PropertyChangedEventHandler PropertyChanged;
++
++        public virtual void NotifyPropertyChanged(String info)
++        {
++            if (PropertyChanged != null)
++            {
++                PropertyChanged(this, new PropertyChangedEventArgs(info));
++            }
++        }
++
++        #endregion
++
++
++        private void TakePhoto()
++        {
++            try
++            {
++                //if (IsBusy)
++                //{
++                    Log.Debug("LiveView: Stack photo capture started");
++                    StartLiveView();
++                    //if (PhotoCount > 0)
++                    //{
++                    //    SetFocus(FocusStep);
++                    //}
++                    //PhotoCount++;
++                    GetLiveImage();
++                    //Thread.Sleep(WaitTime * 1000);
++                    //if (PhotoCount <= PhotoNo)
++                    //{
++                        //if (!_preview)
++                        //{
++                            //Recording = false;
++                            SelectedPortableDevice.CapturePhotoNoAf();
++                        //}
++                        //else
++                        //{
++                        //    TakePhoto();
++                        //}
++                    //}
++                    //else
++                    //{
++                    //    StartLiveView();
++                        //FreezeImage = false;
++                        //IsBusy = false;
++                        //PhotoCount = 0;
++                        //_timer.Start();
++                    //}
++                //}
++                //else
++                //{
++                //    ServiceProvider.DeviceManager.SelectedCameraDevice.StartLiveView();
++                    //FreezeImage = false;
++                //}
++            }
++            catch (DeviceException exception)
++            {
++                StaticHelper.Instance.SystemMessage = exception.Message;
++                Log.Error("Live view. Unable to take photo", exception);
++            }
++        }
++
++        private void btn_takephoto_Click(object sender, RoutedEventArgs e)
++        {
++            Thread.Sleep(500);
++            GetLiveImage();
++            IsBusy = true;
++            Thread thread = new Thread(TakePhoto);
++            thread.Start();
++        }
++
++        private void btn_help_Click(object sender, RoutedEventArgs e)
++        {
++            HelpProvider.Run(HelpSections.LiveView);
++        }
++
++        
++    }
++}
+Index: CameraControl/windows/LiveViewWnd.xaml
+===================================================================
+--- CameraControl/windows/LiveViewWnd.xaml	(revision 600)
++++ CameraControl/windows/LiveViewWnd.xaml	(working copy)
+@@ -33,7 +33,7 @@
+         </Controls:WindowCommands>
+     </Controls:MetroWindow.WindowCommands>
+ 
+-    <Grid>
++    <Grid Name="MainGrid">
+         <Grid.RowDefinitions>
+             <RowDefinition Height="224" />
+             <RowDefinition Height="46*" />
