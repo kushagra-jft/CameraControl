@@ -34,11 +34,8 @@ namespace CameraControl.Plugins.MainWindowPlugins
     public string DisplayName { get; set; }
 
     System.Windows.Threading.DispatcherTimer _timer;
-
-    // Internal use; doesn't need notifiers.
     public bool BarcodeVerified;
     public bool BarcodeUsed = true;
-
     public string Barcode
     {
         get { return ServiceProvider.Settings.DefaultSession.LastBarcode; }
@@ -48,7 +45,6 @@ namespace CameraControl.Plugins.MainWindowPlugins
             NotifyPropertyChanged("Barcode");
         }
     }
-
     public string QuickTag
     {
         get { return ServiceProvider.Settings.DefaultSession.QuickTag; }
@@ -254,9 +250,12 @@ namespace CameraControl.Plugins.MainWindowPlugins
             
             if (!session.RetainCameraCopy && BarcodeVerified) {
                 var Cam = ServiceProvider.DeviceManager.SelectedCameraDevice;
-                var imgFile = Cam.GetObjects(null).Where(t => (uint)(t.Handle) == (uint)(eventArgs.Handle)).Single();
-                FileItem fileItem = new FileItem(imgFile, Cam);
-                fileItem.Device.DeleteObject(fileItem.DeviceObject);
+                var imgFile = Cam.GetObjects(null).Where(t => (uint)(t.Handle) == (uint)(eventArgs.Handle)).SingleOrDefault();
+                if (imgFile != null)
+                {
+                    FileItem fileItem = new FileItem(imgFile, Cam);
+                    fileItem.Device.DeleteObject(fileItem.DeviceObject);
+                }
             }
 
             BarcodeUsed = true;
@@ -266,11 +265,13 @@ namespace CameraControl.Plugins.MainWindowPlugins
             {
                 PhotoUtils.PlayCaptureSound();
             }
+
         }
         catch (Exception exception)
         {
             eventArgs.CameraDevice.IsBusy = false;
-            MessageBox.Show("Error downloading photo from camera :\n" + exception.ToString());
+            //MessageBox.Show("Error downloading photo from camera :\n" + exception.ToString());
+            Log.Error("Error downloading photo from camera :\n" + exception.ToString());
         }
 
         Log.Debug("Photo transfer done.");

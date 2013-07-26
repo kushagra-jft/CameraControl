@@ -182,6 +182,7 @@
       <DependentUpon>EnfuseSettingsWnd.xaml</DependentUpon>
     </Compile>
     <Compile Include="Classes\HelpProvider.cs" />
+    <Compile Include="Classes\WindowExtensions.cs" />
     <Compile Include="Classes\WpfCommands.cs" />
     <Compile Include="Controls\AvalonEditExtensions.cs" />
     <Compile Include="Controls\CameraItem.xaml.cs">
@@ -234,6 +235,9 @@
     </Compile>
     <Compile Include="windows\CameraPropertyWnd.xaml.cs">
       <DependentUpon>CameraPropertyWnd.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="windows\DialogPrompt.xaml.cs">
+      <DependentUpon>DialogPrompt.xaml</DependentUpon>
     </Compile>
     <Compile Include="windows\EditDefaultSession.xaml.cs">
       <DependentUpon>EditDefaultSession.xaml</DependentUpon>
@@ -380,6 +384,10 @@
     <Page Include="windows\CameraPropertyWnd.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="windows\DialogPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="windows\EditDefaultSession.xaml">
       <Generator>MSBuild:Compile</Generator>

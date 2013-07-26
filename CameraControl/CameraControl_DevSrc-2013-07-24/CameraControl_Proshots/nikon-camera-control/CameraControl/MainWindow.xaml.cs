@@ -22,6 +22,8 @@ using HelpProvider = CameraControl.Classes.HelpProvider;
 using MessageBox = System.Windows.MessageBox;
 //using MessageBox = System.Windows.Forms.MessageBox;
 using Path = System.IO.Path;
+using System.Windows.Media;
+using System.Text.RegularExpressions;
 
 namespace CameraControl
 {
@@ -35,6 +37,15 @@ namespace CameraControl
         public string DisplayName { get; set; }
 
         private object _locker = new object();
+
+        System.Windows.Threading.DispatcherTimer _timer;
+        public bool BarcodeVerified;
+        public bool BarcodeUsed = true;
+        public string Barcode
+        {
+            get { return ServiceProvider.Settings.DefaultSession.LastBarcode; }
+            set { ServiceProvider.Settings.DefaultSession.LastBarcode = value; }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow" /> class.
@@ -68,6 +79,7 @@ namespace CameraControl
             //WiaManager = new WIAManager();
             //ServiceProvider.Settings.Manager = WiaManager;
             ServiceProvider.DeviceManager.PhotoCaptured += DeviceManager_PhotoCaptured;
+            ServiceProvider.DeviceManager.CameraDisconnected += DeviceManager_CameraDisconnected;
 
             DataContext = ServiceProvider.Settings;
             if ((DateTime.Now - ServiceProvider.Settings.LastUpdateCheckDate).TotalDays > 7)
@@ -79,6 +91,13 @@ namespace CameraControl
             ServiceProvider.DeviceManager.CameraSelected += DeviceManager_CameraSelected;
             SetLayout(ServiceProvider.Settings.SelectedLayout);
             ServiceProvider.Settings.ApplyTheme(this);
+
+            _timer = new System.Windows.Threading.DispatcherTimer();
+            _timer.Tick += on_timer_Tick;
+            _timer.Interval = new TimeSpan(0, 0, 0, 0, 250);
+
+            brushRegexDef = txt_Barcode.Background;
+            flashBackgroundDefault = MainGrid.Background;
         }
 
         void DeviceManager_CameraSelected(ICameraDevice oldcameraDevice, ICameraDevice newcameraDevice)
@@ -108,6 +127,11 @@ namespace CameraControl
             obj.Execute();
         }
 
+        void DeviceManager_CameraDisconnected(ICameraDevice target)
+        {
+            ShowWarning("Camera Disconnected!");
+        }
+
         void DeviceManager_PhotoCaptured(object sender, PhotoCapturedEventArgs eventArgs)
         {
             if (ServiceProvider.Settings.UseParallelTransfer)
@@ -134,6 +158,14 @@ namespace CameraControl
             PhotoCapturedEventArgs eventArgs = o as PhotoCapturedEventArgs;
             if (eventArgs == null)
                 return;
+
+            if (!BarcodeVerified)
+            {
+                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, new FileItem(""));
+                ShowWarning("Invalid Barcode; Image not transfered!");
+                return;
+            }
+
             try
             {
                 Log.Debug("Photo transfer begin.");
@@ -197,6 +229,7 @@ namespace CameraControl
                 }
                 //ServiceProvider.Settings.Save(session);
                 StaticHelper.Instance.SystemMessage = TranslationStrings.MsgPhotoTransferDone;
+                BarcodeUsed = true;
                 eventArgs.CameraDevice.IsBusy = false;
                 //show fullscreen only when the multiple camera support isn't used
                 if (ServiceProvider.Settings.Preview &&
@@ -645,6 +678,101 @@ namespace CameraControl
                 ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Del_Image);
                 e.Handled = true;
             }
+        }
+
+        private void on_txt_Barcode_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            Barcode = txt_Barcode.Text;    // Expedite update
+            BarcodeUsed = false;
+            CheckBarcode();
+        }
+
+        private void on_txt_Barcode_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            if (BarcodeUsed)
+                txt_Barcode.Text = "";
+        }
+
+        private Brush brushRegexDef = null;
+        private Brush brushRegexOkay = new SolidColorBrush(Color.FromRgb(0x00, 0x6F, 0x00));
+        private Brush brushRegexBad = new SolidColorBrush(Color.FromRgb(0x6F, 0x00, 0x00));
+
+        private void CheckBarcode()
+        {
+            var Session = ServiceProvider.Settings.DefaultSession;
+
+            bool PassedRegex = false;
+            try
+            {
+                Regex BarcodeCheck = new Regex(Session.BarcodeRegex);
+                if (BarcodeCheck.IsMatch(Barcode))
+                    PassedRegex = true;
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e.ToString());
+            }
+
+            bool PassedLength = (Barcode.Length <= Session.BarcodeLengthMax && Barcode.Length >= Session.BarcodeLengthMin);
+
+            if (PassedLength && PassedRegex)
+            {
+                txt_Barcode.Background = brushRegexOkay;
+                BarcodeVerified = true;
+            }
+            else
+            {
+                txt_Barcode.Background = brushRegexBad;
+                if (String.IsNullOrEmpty(Barcode))
+                    txt_Barcode.Background = brushRegexDef;
+                BarcodeVerified = false;
+            }
+        }
+
+        public void ShowWarning(string msg)
+        {
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                FlashScreen(-1);
+                var prompt = new CameraControl.windows.DialogPrompt(msg);
+                prompt.ShowDialog();
+                FlashScreenStop();
+            }));
+        }
+
+        private Brush flashBackgroundDefault = null;
+        private Brush flashBackgroundWarning = new SolidColorBrush(Color.FromRgb(0xAF, 0x00, 0x00));
+        private int timer_TicksRemain;
+        private void on_timer_Tick(object sender, EventArgs e)
+        {
+            if (timer_TicksRemain == 0)
+            {
+                MainGrid.Background = flashBackgroundDefault;
+                _timer.Stop();
+                return;
+            }
+            if (timer_TicksRemain > 0)
+                timer_TicksRemain--;
+            else
+                timer_TicksRemain = (timer_TicksRemain == -1) ? -2 : -1;
+
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                MainGrid.Background = (timer_TicksRemain % 2 == 0) ? flashBackgroundWarning : flashBackgroundDefault;
+            }));
+        }
+        public void FlashScreen(int flashes)
+        {
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                this.Activate();
+            }));
+            timer_TicksRemain = flashes * 2;
+            _timer.Start();
+        }
+        public void FlashScreenStop()
+        {
+            timer_TicksRemain = 0;
         }
 
     }

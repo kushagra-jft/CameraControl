@@ -179,7 +179,7 @@
         </Controls:Flyout>
     </Controls:MetroWindow.Flyouts>
 
-    <Grid>
+    <Grid Name="MainGrid">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="136" />
             <ColumnDefinition Width="200" />
@@ -187,7 +187,7 @@
             <ColumnDefinition Width="294" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="65" />
+            <RowDefinition Height="90" />
             <RowDefinition Height="463*" />
             <RowDefinition Height="54" />
             <RowDefinition Height="102" />
@@ -270,6 +270,11 @@
                 <Button Content="{T:TranslateExtension SessionEdit}" Grid.Column="3" Name="btn_edit_Sesion" Margin="3" Click="btn_edit_Sesion_Click" />
                 <Button Content="{T:TranslateExtension SessionDel}" Grid.Column="3" Name="btn_del_Sesion" Margin="3" Click="btn_del_Sesion_Click" />
             </StackPanel>
+            <DockPanel>
+                <Label Content="Barcode:" Name="lbl_Barcode"/>
+                <TextBox Name="txt_Barcode" Margin="2" KeyUp="on_txt_Barcode_KeyUp" KeyDown="on_txt_Barcode_KeyDown" HorizontalAlignment="Stretch" DockPanel.Dock="Left"
+                 Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.Barcode}" IsReadOnly="False" />
+            </DockPanel>
         </StackPanel>
         <Controls:ProgressRing IsActive="{Binding Source={x:Static Member=Core:ServiceProvider.DeviceManager}, Path=SelectedCameraDevice.IsBusy}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="25,24,30,0" Grid.Row="3" Height="78" Width="81" />
         <Button Content="{T:TranslateExtension ButtonGetRawCodec}" Grid.Row="3" Height="23" Name="btn_getRaw" VerticalAlignment="Top" Click="btn_getRaw_Click"  Visibility="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=SelectedBitmap.RawCodecNeeded, Converter={StaticResource BooleanToVisibilityConverter1}, ConverterParameter=false}"/>
