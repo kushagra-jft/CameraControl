@@ -680,6 +680,17 @@ namespace CameraControl
             }
         }
 
+        private void on_txt_Prefix_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            var QTRegex = @"[^a-zA-Z]{1}";
+            var QuickTag = txt_Prefix.Text;
+            var pos = txt_Prefix.CaretIndex;
+            var matchesBefore = Regex.Matches(QuickTag.Substring(0, pos), QTRegex).Count;
+            ServiceProvider.Settings.DefaultSession.QuickTag = Regex.Replace(QuickTag, QTRegex, "");
+            txt_Prefix.Text = ServiceProvider.Settings.DefaultSession.QuickTag;
+            txt_Prefix.CaretIndex = pos - matchesBefore;
+        }
+
         private void on_txt_Barcode_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
             Barcode = txt_Barcode.Text;    // Expedite update
