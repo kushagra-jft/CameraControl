@@ -291,10 +291,15 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void on_btn_Session(object sender, RoutedEventArgs e)
     {
-        var dialog = new CameraControl.Plugins.windows.PasswordPrompt("A password is required to edit these settings.");
-        var res = dialog.ShowDialog() ?? false;
-        if (res && dialog.ResponseString==ServiceProvider.Settings.SettingsPassword)
+        if(String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
             ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Show);
+        else
+        {
+            var dialog = new CameraControl.Plugins.windows.PasswordPrompt("A password is required to edit these settings.");
+            var res = dialog.ShowDialog() ?? false;
+            if (res && dialog.ResponseString==ServiceProvider.Settings.SettingsPassword)
+                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Show);
+        }
     }
 
     private Brush brushRegexDef = null;

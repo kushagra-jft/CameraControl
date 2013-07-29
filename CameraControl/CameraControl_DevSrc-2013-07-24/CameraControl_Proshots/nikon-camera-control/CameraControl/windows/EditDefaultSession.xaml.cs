@@ -42,6 +42,7 @@ namespace CameraControl.windows
     {
         iud_LengthMax.ValueChanged += on_iud_LengthMax_Change;
         iud_LengthMin.ValueChanged += on_iud_LengthMin_Change;
+        txt_SettingsPassword.Password = ServiceProvider.Settings.SettingsPassword;
     }
 
     private void button1_Click(object sender, RoutedEventArgs e)
@@ -129,14 +130,14 @@ namespace CameraControl.windows
             File.Delete(ServiceProvider.Settings.DefaultSession.ConfigFile);
         ServiceProvider.Settings.Save(Session);
 
-        if(String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
-        {
-            StringBuilder builder = new StringBuilder();
-            var random = new Random();
-            for (int i = 0; i < 8; i++)
-                builder.Append( Convert.ToChar(Convert.ToInt32(Math.Floor(26 * random.NextDouble() + 65))) );
-            ServiceProvider.Settings.SettingsPassword = builder.ToString();
-        }
+        //if(String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
+        //{
+        //    StringBuilder builder = new StringBuilder();
+        //    var random = new Random();
+        //    for (int i = 0; i < 8; i++)
+        //        builder.Append( Convert.ToChar(Convert.ToInt32(Math.Floor(26 * random.NextDouble() + 65))) );
+        //    ServiceProvider.Settings.SettingsPassword = builder.ToString();
+        //}
         ServiceProvider.Settings.DefaultsWereLoaded = true;
         ServiceProvider.Settings.Save();
 
@@ -222,6 +223,11 @@ namespace CameraControl.windows
         Session.QuickTag = Regex.Replace(Session.QuickTag, QTRegex, "");
         txt_QuickTag.Text = Session.QuickTag;
         txt_QuickTag.CaretIndex = pos - matchesBefore;
+    }
+
+    private void on_txt_SettingsPassword_Changed(object sender, RoutedEventArgs e)
+    {
+        ServiceProvider.Settings.SettingsPassword = txt_SettingsPassword.Password;
     }
 
   }

@@ -317,13 +317,20 @@ namespace CameraControl
 
         private void btn_edit_Sesion_Click(object sender, RoutedEventArgs e)
         {
-            if (File.Exists(ServiceProvider.Settings.DefaultSession.ConfigFile))
+            if (!String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
             {
-                File.Delete(ServiceProvider.Settings.DefaultSession.ConfigFile);
+                var dialog = new CameraControl.windows.PasswordPrompt("A password is required to edit these settings.");
+                var res = dialog.ShowDialog() ?? false;
+                if (!(res && dialog.ResponseString == ServiceProvider.Settings.SettingsPassword))
+                    return;
             }
+
+            if (File.Exists(ServiceProvider.Settings.DefaultSession.ConfigFile))
+                File.Delete(ServiceProvider.Settings.DefaultSession.ConfigFile);
             EditSession editSession = new EditSession(ServiceProvider.Settings.DefaultSession);
             editSession.ShowDialog();
             ServiceProvider.Settings.Save(ServiceProvider.Settings.DefaultSession);
+            
         }
 
         private void btn_add_Sesion_Click(object sender, RoutedEventArgs e)

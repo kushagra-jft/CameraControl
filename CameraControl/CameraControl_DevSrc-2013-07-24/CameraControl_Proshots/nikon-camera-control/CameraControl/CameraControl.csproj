@@ -270,6 +270,9 @@
     <Compile Include="windows\MultipleCameraWnd.xaml.cs">
       <DependentUpon>MultipleCameraWnd.xaml</DependentUpon>
     </Compile>
+    <Compile Include="windows\PasswordPrompt.xaml.cs">
+      <DependentUpon>PasswordPrompt.xaml</DependentUpon>
+    </Compile>
     <Compile Include="windows\PresetEditWnd.xaml.cs">
       <DependentUpon>PresetEditWnd.xaml</DependentUpon>
     </Compile>
@@ -428,6 +431,10 @@
     <Page Include="windows\MultipleCameraWnd.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="windows\PasswordPrompt.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
     <Page Include="windows\PresetEditWnd.xaml">
       <SubType>Designer</SubType>
