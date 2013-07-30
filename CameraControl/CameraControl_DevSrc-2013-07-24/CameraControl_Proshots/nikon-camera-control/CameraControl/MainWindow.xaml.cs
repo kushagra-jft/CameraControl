@@ -92,6 +92,9 @@ namespace CameraControl
             SetLayout(ServiceProvider.Settings.SelectedLayout);
             ServiceProvider.Settings.ApplyTheme(this);
 
+            if (!ServiceProvider.Settings.DefaultsWereLoaded)
+                ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Firstrun);
+
             _timer = new System.Windows.Threading.DispatcherTimer();
             _timer.Tick += on_timer_Tick;
             _timer.Interval = new TimeSpan(0, 0, 0, 0, 250);

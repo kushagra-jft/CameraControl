@@ -124,7 +124,8 @@ namespace CameraControl.windows
 
         ServiceProvider.Settings.Save(Session);
 
-        //if (String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
+        if (String.IsNullOrEmpty(ServiceProvider.Settings.SettingsPassword))
+            ServiceProvider.Settings.SettingsPassword = "MoscowCongodoubt";
         //{
         //    StringBuilder builder = new StringBuilder();
         //    var random = new Random();
