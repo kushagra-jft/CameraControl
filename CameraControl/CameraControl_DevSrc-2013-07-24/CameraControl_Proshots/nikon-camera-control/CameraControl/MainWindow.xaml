@@ -37,7 +37,7 @@
             <Button Content="{T:TranslateExtension SettingsToolTip}" Name="btn_settings" Click="btn_settings_Click" />
             <Button Content="{T:TranslateExtension LabelMenu}" Name="btn_menu" Click="btn_menu_Click" />
             <Button Content="{T:TranslateExtension ButtonHelp}" Name="btn_help" Click="btn_help_Click" Visibility="{Binding Source={x:Static Member=Core:ServiceProvider.Branding}, Path=OnlineReference, Converter={StaticResource BooleanToVisibilityConverter1}}"/>
-            <Button Content="{T:TranslateExtension MenuDonate}" Name="btn_donate" Click="btn_donate_Click" Visibility="{Binding Source={x:Static Member=Core:ServiceProvider.Branding}, Path=OnlineReference, Converter={StaticResource BooleanToVisibilityConverter1}}"/>
+            <!--<Button Content="{T:TranslateExtension MenuDonate}" Name="btn_donate" Click="btn_donate_Click" Visibility="{Binding Source={x:Static Member=Core:ServiceProvider.Branding}, Path=OnlineReference, Converter={StaticResource BooleanToVisibilityConverter1}}"/>-->
             <!--<Button>
                 <StackPanel Orientation="Horizontal">
                     <Rectangle Width="20" Height="20">
