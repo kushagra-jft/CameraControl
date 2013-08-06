@@ -368,6 +368,13 @@ namespace CameraControl.Plugins.MainWindowPlugins
         ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.LiveViewSimpleWnd_Show, ServiceProvider.DeviceManager.SelectedCameraDevice);
     }
 
+    private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
+    {
+        txt_Barcode.Text = "";
+        ServiceProvider.Settings.DefaultSession.LastBarcode = "";
+        CheckBarcode();
+    }
     
+
   }
 }

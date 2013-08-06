@@ -274,6 +274,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="65" />
                     <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="50" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" />
@@ -288,6 +289,7 @@
                 <TextBox Grid.Column="1" Grid.Row="1"
                     Name="txt_Barcode" Margin="2" KeyUp="on_txt_Barcode_KeyUp" KeyDown="on_txt_Barcode_KeyDown" HorizontalAlignment="Stretch"
                     Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.Barcode}" IsReadOnly="False" />
+                <Button Grid.Row="1" Grid.Column="2" Margin="3" Content="Clear" Name="btn_ClearBarcode" Click="btn_ClearBarcode_Click"/>
             </Grid>
         </StackPanel>
         <Controls:ProgressRing IsActive="{Binding Source={x:Static Member=Core:ServiceProvider.DeviceManager}, Path=SelectedCameraDevice.IsBusy}" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="25,24,30,0" Grid.Row="3" Height="78" Width="81" />

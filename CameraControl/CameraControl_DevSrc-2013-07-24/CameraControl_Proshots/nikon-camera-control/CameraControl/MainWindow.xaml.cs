@@ -796,5 +796,12 @@ namespace CameraControl
             timer_TicksRemain = 0;
         }
 
+        private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
+        {
+            txt_Barcode.Text = "";
+            ServiceProvider.Settings.DefaultSession.LastBarcode = "";
+            CheckBarcode();
+        }
+
     }
 }
