@@ -357,8 +357,8 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void on_txt_Barcode_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (BarcodeUsed)
-            txt_Barcode.Text = "";
+        //if (BarcodeUsed)
+        //    txt_Barcode.Text = "";
     }
 
     private void on_btn_LiveView(object sender, RoutedEventArgs e)
@@ -370,9 +370,13 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
     {
-        txt_Barcode.Text = "";
         ServiceProvider.Settings.DefaultSession.LastBarcode = "";
-        CheckBarcode();
+        Dispatcher.BeginInvoke(new Action(delegate
+        {
+            txt_Barcode.Text = "";
+            CheckBarcode();
+            txt_Barcode.Focus();
+        }));
     }
     
 
