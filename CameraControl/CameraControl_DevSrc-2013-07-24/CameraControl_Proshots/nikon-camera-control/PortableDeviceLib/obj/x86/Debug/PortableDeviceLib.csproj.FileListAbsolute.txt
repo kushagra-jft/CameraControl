@@ -1,7 +1,0 @@
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\bin\x86\Debug\PortableDeviceLib.dll
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\bin\x86\Debug\PortableDeviceLib.pdb
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\bin\x86\Debug\Interop.PortableDeviceApiLib.dll
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\bin\x86\Debug\Interop.PortableDeviceTypesLib.dll
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\obj\x86\Debug\ResolveAssemblyReference.cache
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\obj\x86\Debug\PortableDeviceLib.dll
-C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\PortableDeviceLib\obj\x86\Debug\PortableDeviceLib.pdb
