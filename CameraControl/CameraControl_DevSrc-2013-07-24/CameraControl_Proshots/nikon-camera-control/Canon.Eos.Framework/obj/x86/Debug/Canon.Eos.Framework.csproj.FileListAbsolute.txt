@@ -1,0 +1,5 @@
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\Canon.Eos.Framework\bin\x86\Debug\Canon.Eos.Framework.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\Canon.Eos.Framework\bin\x86\Debug\Canon.Eos.Framework.pdb
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\Canon.Eos.Framework\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\Canon.Eos.Framework\obj\x86\Debug\Canon.Eos.Framework.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\Canon.Eos.Framework\obj\x86\Debug\Canon.Eos.Framework.pdb

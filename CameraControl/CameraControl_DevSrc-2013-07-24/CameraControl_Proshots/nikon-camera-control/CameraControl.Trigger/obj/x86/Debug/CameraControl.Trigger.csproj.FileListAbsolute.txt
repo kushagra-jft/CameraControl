@@ -1,0 +1,7 @@
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\bin\x86\Debug\CameraControl.Trigger.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\bin\x86\Debug\CameraControl.Trigger.pdb
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\bin\x86\Debug\MahApps.Metro.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\bin\x86\Debug\System.Windows.Interactivity.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\obj\x86\Debug\ResolveAssemblyReference.cache
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\obj\x86\Debug\CameraControl.Trigger.dll
+C:\Users\maikeru\Documents\GitHub\CameraControl\CameraControl\CameraControl_DevSrc-2013-07-24\CameraControl_Proshots\nikon-camera-control\CameraControl.Trigger\obj\x86\Debug\CameraControl.Trigger.pdb
