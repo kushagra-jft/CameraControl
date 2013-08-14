@@ -88,18 +88,16 @@ namespace CameraControl.windows
 
         //OnImageLoaded();
 
-        if (ServiceProvider.Settings.SelectedBitmap.FileItem.DestinationFilename != null &&
-            ServiceProvider.Settings.SelectedBitmap.FileItem.ItemType == FileItemType.File)
+        var fileItem = ServiceProvider.Settings.SelectedBitmap.FileItem;
+        if (fileItem.DestinationFilename != null && !String.IsNullOrWhiteSpace(fileItem.DestinationFilename) && fileItem.ItemType == FileItemType.File)
         {
-            var from = ServiceProvider.Settings.SelectedBitmap.FileItem.FileName;
-            var to =   ServiceProvider.Settings.SelectedBitmap.FileItem.DestinationFilename;
             try
             {
-                System.IO.File.Move(from, to);
+                System.IO.File.Move(fileItem.FileName, fileItem.DestinationFilename);
             }
             catch (Exception e)
             {
-                Log.Debug(e.ToString());
+                Log.Error(e.ToString());
             }
         }
 
