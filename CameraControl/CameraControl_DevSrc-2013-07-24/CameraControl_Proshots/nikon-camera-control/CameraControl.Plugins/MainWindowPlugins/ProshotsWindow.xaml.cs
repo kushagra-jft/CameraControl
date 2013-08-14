@@ -351,7 +351,7 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void on_txt_Barcode_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
-        if (ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+        if (ServiceProvider.DeviceManager.SelectedCameraDevice != null && ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
         {
             Dispatcher.BeginInvoke(new Action(delegate
             {
@@ -381,7 +381,7 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
     {
-        if (ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+        if (ServiceProvider.DeviceManager.SelectedCameraDevice != null && ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
         {
             Dispatcher.BeginInvoke(new Action(delegate
             {
