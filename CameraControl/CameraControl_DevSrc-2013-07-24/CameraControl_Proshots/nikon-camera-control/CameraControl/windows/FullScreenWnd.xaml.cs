@@ -15,6 +15,7 @@ using CameraControl.Classes;
 using CameraControl.Core;
 using CameraControl.Core.Classes;
 using CameraControl.Core.Interfaces;
+using CameraControl.Devices;
 
 namespace CameraControl.windows
 {
@@ -72,6 +73,7 @@ namespace CameraControl.windows
     {
         if (ServiceProvider.Settings.SelectedBitmap.FileItem == null)
             return;
+
         bool fullres = true;// e.Argument is bool && (bool)e.Argument;
         ServiceProvider.Settings.ImageLoading = fullres || !ServiceProvider.Settings.SelectedBitmap.FileItem.IsLoaded;
         BitmapLoader.Instance.GenerateCache(ServiceProvider.Settings.SelectedBitmap.FileItem);
@@ -83,7 +85,24 @@ namespace CameraControl.windows
         BitmapLoader.Instance.SetData(ServiceProvider.Settings.SelectedBitmap, ServiceProvider.Settings.SelectedBitmap.FileItem);
         ServiceProvider.Settings.SelectedBitmap.FullResLoaded = fullres;
         ServiceProvider.Settings.ImageLoading = false;
+
         //OnImageLoaded();
+
+        if (ServiceProvider.Settings.SelectedBitmap.FileItem.DestinationFilename != null &&
+            ServiceProvider.Settings.SelectedBitmap.FileItem.ItemType == FileItemType.File)
+        {
+            var from = ServiceProvider.Settings.SelectedBitmap.FileItem.FileName;
+            var to =   ServiceProvider.Settings.SelectedBitmap.FileItem.DestinationFilename;
+            try
+            {
+                System.IO.File.Move(from, to);
+            }
+            catch (Exception e)
+            {
+                Log.Debug(e.ToString());
+            }
+        }
+
         GC.Collect();
     }
 

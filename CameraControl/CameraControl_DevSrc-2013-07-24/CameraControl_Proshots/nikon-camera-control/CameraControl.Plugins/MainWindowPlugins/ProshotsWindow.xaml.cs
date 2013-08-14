@@ -234,27 +234,28 @@ namespace CameraControl.Plugins.MainWindowPlugins
                 Directory.CreateDirectory(Path.GetDirectoryName(fileName));
             }
 
-            //var tmpFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName,
-            //                                   "Cache", Path.GetFileName(fileName));
+            var tmpFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName,
+                                               "Cache", Path.GetFileName(fileName));
 
             Log.Debug("Transfer started :" + fileName);
             DateTime startTIme = DateTime.Now;
-            eventArgs.CameraDevice.TransferFile(eventArgs.Handle, fileName);
+            eventArgs.CameraDevice.TransferFile(eventArgs.Handle, tmpFileName);
             Log.Debug("Transfer done :" + fileName);
             Log.Debug("[BENCHMARK]Speed :" +
                       (new System.IO.FileInfo(fileName).Length / (DateTime.Now - startTIme).TotalSeconds / 1024 / 1024).ToString("0000.00"));
             Log.Debug("[BENCHMARK]Transfer time :" + ((DateTime.Now - startTIme).TotalSeconds).ToString("0000.000"));
 
-            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, session.AddFile(fileName));
-            //ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, new Tuple<FileItem,string>(session.AddFile(tmpFileName), fileName));
+            var fileItem = session.AddFile(fileName);
+            fileItem.DestinationFilename = fileName;
+            ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, fileItem);
             
             if (!session.RetainCameraCopy && BarcodeVerified) {
                 var Cam = ServiceProvider.DeviceManager.SelectedCameraDevice;
                 var imgFile = Cam.GetObjects(null).Where(t => (uint)(t.Handle) == (uint)(eventArgs.Handle)).SingleOrDefault();
                 if (imgFile != null)
                 {
-                    FileItem fileItem = new FileItem(imgFile, Cam);
-                    fileItem.Device.DeleteObject(fileItem.DeviceObject);
+                    FileItem delFileItem = new FileItem(imgFile, Cam);
+                    fileItem.Device.DeleteObject(delFileItem.DeviceObject);
                 }
             }
 

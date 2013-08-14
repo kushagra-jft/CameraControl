@@ -40,6 +40,8 @@ namespace CameraControl.Core.Classes
             }
         }
 
+        public string DestinationFilename { get; set; }
+
         public bool IsRaw
         {
             get { return !string.IsNullOrEmpty(FileName) && Path.GetExtension(FileName).ToLower() == ".nef"; }
