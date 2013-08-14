@@ -351,6 +351,16 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void on_txt_Barcode_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
     {
+        if (ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+        {
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                var prompt = new CameraControl.Plugins.windows.DialogPrompt("Should not clear barcode: transfers still pending.");
+                prompt.ShowDialog();
+            }));
+            return;
+        }
+
         Barcode = txt_Barcode.Text;    // Expedite update
         BarcodeUsed = false;
         CheckBarcode();
@@ -371,7 +381,18 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
     {
-        ServiceProvider.Settings.DefaultSession.LastBarcode = "";
+        if (ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+        {
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                var prompt = new CameraControl.Plugins.windows.DialogPrompt("Should not clear barcode: transfers still pending.");
+                prompt.ShowDialog();
+            }));
+            return;
+        }
+
+        Barcode = "";
+        // Should already be in WPF thread, no?
         Dispatcher.BeginInvoke(new Action(delegate
         {
             txt_Barcode.Text = "";
