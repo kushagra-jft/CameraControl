@@ -260,7 +260,7 @@ namespace CameraControl.Core.Classes
                     {
                         BitmapDecoder bmpDec = BitmapDecoder.Create(new Uri(FileName),
                                                                     BitmapCreateOptions.None,
-                                                                    BitmapCacheOption.Default);
+                                                                    BitmapCacheOption.OnLoad);
                         if (bmpDec.Thumbnail != null)
                         {
                             WriteableBitmap bitmap = new WriteableBitmap(bmpDec.Thumbnail);
@@ -278,12 +278,13 @@ namespace CameraControl.Core.Classes
                     Image.GetThumbnailImageAbort myCallback = ThumbnailCallback;
                     Stream fs = new FileStream(FileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite); // or any stream
                     Image tempImage = Image.FromStream(fs, true, false);
+                    fs.Close();
 
                     Thumbnail =
                       BitmapSourceConvert.ToBitmapSource(
                         (Bitmap)tempImage.GetThumbnailImage(160, 120, myCallback, IntPtr.Zero));
                     tempImage.Dispose();
-                    fs.Close();
+                    
                 }
             }
             catch (Exception exception)

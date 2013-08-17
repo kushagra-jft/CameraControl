@@ -237,15 +237,15 @@ namespace CameraControl.Plugins.MainWindowPlugins
             var tmpFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName,
                                                "Cache", Path.GetFileName(fileName));
 
-            Log.Debug("Transfer started :" + fileName);
+            Log.Debug("Transfer started :" + tmpFileName);
             DateTime startTIme = DateTime.Now;
             eventArgs.CameraDevice.TransferFile(eventArgs.Handle, tmpFileName);
-            Log.Debug("Transfer done :" + fileName);
+            Log.Debug("Transfer done :" + tmpFileName);
             Log.Debug("[BENCHMARK]Speed :" +
-                      (new System.IO.FileInfo(fileName).Length / (DateTime.Now - startTIme).TotalSeconds / 1024 / 1024).ToString("0000.00"));
+                      (new System.IO.FileInfo(tmpFileName).Length / (DateTime.Now - startTIme).TotalSeconds / 1024 / 1024).ToString("0000.00"));
             Log.Debug("[BENCHMARK]Transfer time :" + ((DateTime.Now - startTIme).TotalSeconds).ToString("0000.000"));
 
-            var fileItem = session.AddFile(fileName);
+            var fileItem = session.AddFile(tmpFileName);
             fileItem.DestinationFilename = fileName;
             ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.Select_Image, fileItem);
             

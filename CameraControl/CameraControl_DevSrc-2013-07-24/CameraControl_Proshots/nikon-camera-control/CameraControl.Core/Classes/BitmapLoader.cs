@@ -89,7 +89,7 @@ namespace CameraControl.Core.Classes
             {
                 BitmapDecoder bmpDec = BitmapDecoder.Create(new Uri(fileItem.FileName),
                                                             BitmapCreateOptions.None,
-                                                            BitmapCacheOption.Default);
+                                                            BitmapCacheOption.OnLoad);
                 WriteableBitmap writeableBitmap = BitmapFactory.ConvertToPbgra32Format(bmpDec.Frames[0]);
 
                 fileItem.Width = writeableBitmap.PixelWidth;
@@ -238,7 +238,7 @@ namespace CameraControl.Core.Classes
             {
                 BitmapDecoder bmpDec = BitmapDecoder.Create(new Uri(fullres ? fileItem.FileName : fileItem.LargeThumb),
                                                             BitmapCreateOptions.None,
-                                                            BitmapCacheOption.Default);
+                                                            BitmapCacheOption.OnLoad);
 
                 WriteableBitmap bitmap = BitmapFactory.ConvertToPbgra32Format(bmpDec.Frames[0]);
                 

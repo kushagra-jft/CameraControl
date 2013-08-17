@@ -73,6 +73,8 @@ namespace CameraControl.windows
     {
         if (ServiceProvider.Settings.SelectedBitmap.FileItem == null)
             return;
+        if (!System.IO.File.Exists(ServiceProvider.Settings.SelectedBitmap.FileItem.FileName))
+            return;
 
         bool fullres = true;// e.Argument is bool && (bool)e.Argument;
         ServiceProvider.Settings.ImageLoading = fullres || !ServiceProvider.Settings.SelectedBitmap.FileItem.IsLoaded;
@@ -88,6 +90,8 @@ namespace CameraControl.windows
 
         //OnImageLoaded();
 
+        GC.Collect();
+
         var fileItem = ServiceProvider.Settings.SelectedBitmap.FileItem;
         if (fileItem.DestinationFilename != null && !String.IsNullOrWhiteSpace(fileItem.DestinationFilename) && fileItem.ItemType == FileItemType.File)
         {
@@ -100,8 +104,6 @@ namespace CameraControl.windows
                 Log.Error(e.ToString());
             }
         }
-
-        GC.Collect();
     }
 
     #region Implementation of IWindow

@@ -205,6 +205,9 @@ namespace CameraControl.Layouts
         {
             if (ServiceProvider.Settings.SelectedBitmap.FileItem == null)
                 return;
+            if (!File.Exists(ServiceProvider.Settings.SelectedBitmap.FileItem.FileName))
+                return;
+
             bool fullres = e.Argument is bool && (bool) e.Argument;
             ServiceProvider.Settings.ImageLoading = fullres || !ServiceProvider.Settings.SelectedBitmap.FileItem.IsLoaded;
             BitmapLoader.Instance.GenerateCache(ServiceProvider.Settings.SelectedBitmap.FileItem);
@@ -216,8 +219,23 @@ namespace CameraControl.Layouts
             BitmapLoader.Instance.SetData(ServiceProvider.Settings.SelectedBitmap, ServiceProvider.Settings.SelectedBitmap.FileItem);
             ServiceProvider.Settings.SelectedBitmap.FullResLoaded = fullres;
             ServiceProvider.Settings.ImageLoading = false;
+
             OnImageLoaded();
+
             GC.Collect();
+
+            var fileItem = ServiceProvider.Settings.SelectedBitmap.FileItem;
+            //if (fileItem.DestinationFilename != null && !String.IsNullOrWhiteSpace(fileItem.DestinationFilename) && fileItem.ItemType == FileItemType.File)
+            //{
+            //    try
+            //    {
+            //        System.IO.File.Move(fileItem.FileName, fileItem.DestinationFilename);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Log.Error(ex.ToString());
+            //    }
+            //}
         }
 
         public virtual void OnImageLoaded()

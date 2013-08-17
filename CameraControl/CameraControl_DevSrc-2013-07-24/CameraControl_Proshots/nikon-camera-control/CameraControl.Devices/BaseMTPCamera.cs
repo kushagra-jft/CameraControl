@@ -164,10 +164,10 @@ namespace CameraControl.Devices
                     }
                     if (result != null && result.Data != null)
                     {
-                        using (BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Create)))
-                        {
-                            writer.Write(result.Data);
-                        }
+                        BinaryWriter writer = new BinaryWriter(File.Open(filename, FileMode.Create));
+                        writer.Write(result.Data);
+                        writer.Flush();
+                        writer.Close();
                     }
                     else
                     {
