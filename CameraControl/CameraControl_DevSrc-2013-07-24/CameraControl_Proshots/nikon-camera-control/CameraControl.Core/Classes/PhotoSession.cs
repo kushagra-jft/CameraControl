@@ -162,6 +162,17 @@ namespace CameraControl.Core.Classes
             }
         }
 
+        private int _barcodeClearDelay;
+        public int BarcodeClearDelay
+        {
+            get { return _barcodeClearDelay; }
+            set
+            {
+                _barcodeClearDelay = value;
+                NotifyPropertyChanged("BarcodeClearDelay");
+            }
+        }
+
         private string _lastBarcode = "";
         public string LastBarcode
         {

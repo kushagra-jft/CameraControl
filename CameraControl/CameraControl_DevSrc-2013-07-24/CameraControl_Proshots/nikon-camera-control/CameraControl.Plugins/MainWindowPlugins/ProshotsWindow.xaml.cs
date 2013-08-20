@@ -54,6 +54,31 @@ namespace CameraControl.Plugins.MainWindowPlugins
             NotifyPropertyChanged("QuickTag");
         }
     }
+    
+    private CameraControl.Plugins.windows.DialogPrompt BarcodeClearDisplay;
+    private System.Windows.Threading.DispatcherTimer BarcodeClearTimer;
+    private int BarcodeClearTimerTicks;
+    private void on_BarcodeClearTimer_Tick(object sender, EventArgs e)
+    {
+        if(ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+            BarcodeClearTimerTicks = 0;
+        else if(BarcodeClearTimerTicks < ServiceProvider.Settings.DefaultSession.BarcodeClearDelay)
+            BarcodeClearTimerTicks++;
+        else
+        {
+            //Clear
+             Dispatcher.BeginInvoke(new Action(delegate
+            {
+                Barcode = "";
+                txt_Barcode.Text = "";
+                CheckBarcode();
+                txt_Barcode.Focus();
+                if(BarcodeClearDisplay!=null && BarcodeClearDisplay.IsInitialized) BarcodeClearDisplay.Close();
+                BarcodeClearTimer.Stop();
+            }));
+            BarcodeClearTimerTicks = 0;
+        }
+    }
 
     public ProshotsWindow()
     {
@@ -381,24 +406,28 @@ namespace CameraControl.Plugins.MainWindowPlugins
 
     private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
     {
-        if (ServiceProvider.DeviceManager.SelectedCameraDevice != null && ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+        if (ServiceProvider.DeviceManager.SelectedCameraDevice == null)
         {
             Dispatcher.BeginInvoke(new Action(delegate
             {
-                var prompt = new CameraControl.Plugins.windows.DialogPrompt("Should not clear barcode: transfers still pending.");
-                prompt.ShowDialog();
+                Barcode = "";
+                txt_Barcode.Text = "";
+                CheckBarcode();
+                txt_Barcode.Focus();
             }));
             return;
         }
 
-        Barcode = "";
-        // Should already be in WPF thread, no?
         Dispatcher.BeginInvoke(new Action(delegate
         {
-            txt_Barcode.Text = "";
-            CheckBarcode();
-            txt_Barcode.Focus();
+            BarcodeClearDisplay = new CameraControl.Plugins.windows.DialogPrompt("Ensuring transfers have completed...\nThis window will close automatically.");
+            BarcodeClearDisplay.Show();
+            BarcodeClearTimer = new System.Windows.Threading.DispatcherTimer();
+            BarcodeClearTimer.Interval = new TimeSpan( 0, 0, ServiceProvider.Settings.DefaultSession.BarcodeClearDelay );
+            BarcodeClearTimer.Tick += on_BarcodeClearTimer_Tick;
+            BarcodeClearTimer.Start();
         }));
+        
     }
     
 

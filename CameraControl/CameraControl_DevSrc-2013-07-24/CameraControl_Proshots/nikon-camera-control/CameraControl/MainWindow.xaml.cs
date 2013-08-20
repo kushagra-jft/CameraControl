@@ -47,6 +47,31 @@ namespace CameraControl
             set { ServiceProvider.Settings.DefaultSession.LastBarcode = value; }
         }
 
+        private CameraControl.windows.DialogPrompt BarcodeClearDisplay;
+        private System.Windows.Threading.DispatcherTimer BarcodeClearTimer;
+        private int BarcodeClearTimerTicks;
+        private void on_BarcodeClearTimer_Tick(object sender, EventArgs e)
+        {
+            if (ServiceProvider.DeviceManager.SelectedCameraDevice.IsBusy)
+                BarcodeClearTimerTicks = 0;
+            else if (BarcodeClearTimerTicks < ServiceProvider.Settings.DefaultSession.BarcodeClearDelay)
+                BarcodeClearTimerTicks++;
+            else
+            {
+                //Clear
+                Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    Barcode = "";
+                    txt_Barcode.Text = "";
+                    CheckBarcode();
+                    txt_Barcode.Focus();
+                    if (BarcodeClearDisplay != null && BarcodeClearDisplay.IsInitialized) BarcodeClearDisplay.Close();
+                    BarcodeClearTimer.Stop();
+                }));
+                BarcodeClearTimerTicks = 0;
+            }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MainWindow" /> class.
         /// </summary>
@@ -806,12 +831,28 @@ namespace CameraControl
 
         private void btn_ClearBarcode_Click(object sender, RoutedEventArgs e)
         {
-            ServiceProvider.Settings.DefaultSession.LastBarcode = "";
-            Dispatcher.BeginInvoke(new Action(delegate {
-                txt_Barcode.Text = "";
-                CheckBarcode();
-                txt_Barcode.Focus();
+            if (ServiceProvider.DeviceManager.SelectedCameraDevice == null)
+            {
+                Dispatcher.BeginInvoke(new Action(delegate
+                {
+                    Barcode = "";
+                    txt_Barcode.Text = "";
+                    CheckBarcode();
+                    txt_Barcode.Focus();
+                }));
+                return;
+            }
+
+            Dispatcher.BeginInvoke(new Action(delegate
+            {
+                BarcodeClearDisplay = new CameraControl.windows.DialogPrompt("Ensuring transfers have completed...\nThis window will close automatically.");
+                BarcodeClearDisplay.Show();
+                BarcodeClearTimer = new System.Windows.Threading.DispatcherTimer();
+                BarcodeClearTimer.Interval = new TimeSpan(0, 0, ServiceProvider.Settings.DefaultSession.BarcodeClearDelay);
+                BarcodeClearTimer.Tick += on_BarcodeClearTimer_Tick;
+                BarcodeClearTimer.Start();
             }));
+
         }
 
     }

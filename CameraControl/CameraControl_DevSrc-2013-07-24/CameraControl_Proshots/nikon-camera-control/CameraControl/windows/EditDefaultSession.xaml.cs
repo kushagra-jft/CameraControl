@@ -106,6 +106,7 @@ namespace CameraControl.windows
         Session.BarcodeDelimiter = "-";
         Session.BarcodeLengthMax = 32;
         Session.BarcodeLengthMin = 8;
+        Session.BarcodeClearDelay = 5;
         Session.QuickTagOption = QuickTagOptions.Set_From_Main;
 
         string SaveFolder = "C:\\Proshots\\Dropfolder";
