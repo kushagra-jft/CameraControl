@@ -423,7 +423,7 @@ namespace CameraControl.Plugins.MainWindowPlugins
             BarcodeClearDisplay = new CameraControl.Plugins.windows.DialogPrompt("Ensuring transfers have completed...\nThis window will close automatically.");
             BarcodeClearDisplay.Show();
             BarcodeClearTimer = new System.Windows.Threading.DispatcherTimer();
-            BarcodeClearTimer.Interval = new TimeSpan( 0, 0, ServiceProvider.Settings.DefaultSession.BarcodeClearDelay );
+            BarcodeClearTimer.Interval = new TimeSpan( 0, 0, 1 );
             BarcodeClearTimer.Tick += on_BarcodeClearTimer_Tick;
             BarcodeClearTimer.Start();
         }));
