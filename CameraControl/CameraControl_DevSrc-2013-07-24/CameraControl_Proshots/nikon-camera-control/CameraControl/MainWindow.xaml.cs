@@ -845,12 +845,15 @@ namespace CameraControl
 
             Dispatcher.BeginInvoke(new Action(delegate
             {
-                BarcodeClearDisplay = new CameraControl.windows.DialogPrompt("Ensuring transfers have completed...\nThis window will close automatically.");
-                BarcodeClearDisplay.Show();
-                BarcodeClearTimer = new System.Windows.Threading.DispatcherTimer();
-                BarcodeClearTimer.Interval = new TimeSpan(0, 0, 1);
-                BarcodeClearTimer.Tick += on_BarcodeClearTimer_Tick;
-                BarcodeClearTimer.Start();
+                if (BarcodeClearDisplay == null || !BarcodeClearDisplay.IsVisible)
+                {
+                    BarcodeClearDisplay = new CameraControl.windows.DialogPrompt("Ensuring transfers have completed...\nThis window will close automatically.");
+                    BarcodeClearDisplay.Show();
+                    BarcodeClearTimer = new System.Windows.Threading.DispatcherTimer();
+                    BarcodeClearTimer.Interval = new TimeSpan(0, 0, 1);
+                    BarcodeClearTimer.Tick += on_BarcodeClearTimer_Tick;
+                    BarcodeClearTimer.Start();
+                }
             }));
 
         }
