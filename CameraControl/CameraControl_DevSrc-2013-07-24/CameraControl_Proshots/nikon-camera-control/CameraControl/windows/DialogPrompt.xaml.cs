@@ -37,7 +37,10 @@ namespace CameraControl.windows
 
         private void on_Okay(object sender, RoutedEventArgs e)
         {
-            DialogResult = true;
+            if (System.Windows.Interop.ComponentDispatcher.IsThreadModal)
+                DialogResult = true;
+            else
+                this.Close();
         }
     }
 }
