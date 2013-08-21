@@ -191,7 +191,7 @@
     </Window.Resources>
     <Controls:MetroWindow.WindowCommands>
         <Controls:WindowCommands>
-            <Button Content="Toggle always in top" Name="btn_top" Click="btn_top_Click" />
+            <!--<Button Content="Toggle always in top" Name="btn_top" Click="btn_top_Click" />-->
         </Controls:WindowCommands>
     </Controls:MetroWindow.WindowCommands>
     <Grid Name="MainGrid">
