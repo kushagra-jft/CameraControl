@@ -234,12 +234,12 @@ namespace CameraControl
                             Path.GetExtension(fileName));
                 }
                 if (!Directory.Exists(Path.GetDirectoryName(fileName)))
-                {
                     Directory.CreateDirectory(Path.GetDirectoryName(fileName));
-                }
-
+                
                 var tmpFileName = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName,
                                                "Cache", Path.GetFileName(fileName));
+                if (!Directory.Exists(Path.GetDirectoryName(tmpFileName)))
+                    Directory.CreateDirectory(Path.GetDirectoryName(tmpFileName));
 
                 Log.Debug("Transfer started :" + tmpFileName);
                 DateTime startTIme = DateTime.Now;
