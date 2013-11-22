@@ -651,7 +651,7 @@ namespace CameraControl.Core.Classes
                 if (session.SupportedExtensions.Contains(Path.GetExtension(file).ToLower()))
                 {
                     if (!session.ContainFile(file))
-                        session.AddFile(file);
+                        session.AddFile(file);  // TODO: Check if this is exploding session with proshots.jar running
                 }
             }
             // remove files which was deleted or not exist

@@ -85,9 +85,7 @@ namespace CameraControl
             ExecuteToolPluginCommand = new RelayCommand<IToolPlugin>(ExecuteToolPlugin);
             InitializeComponent();
             if (!string.IsNullOrEmpty(ServiceProvider.Branding.ApplicationTitle))
-            {
                 Title = ServiceProvider.Branding.ApplicationTitle;
-            }
             if (!string.IsNullOrEmpty(ServiceProvider.Branding.LogoImage) && File.Exists(ServiceProvider.Branding.LogoImage))
             {
                 BitmapImage bi = new BitmapImage();
@@ -105,6 +103,7 @@ namespace CameraControl
             //ServiceProvider.Settings.Manager = WiaManager;
             ServiceProvider.DeviceManager.PhotoCaptured += DeviceManager_PhotoCaptured;
             ServiceProvider.DeviceManager.CameraDisconnected += DeviceManager_CameraDisconnected;
+            ServiceProvider.DeviceManager.CameraSelected += DeviceManager_CameraSelected;
 
             DataContext = ServiceProvider.Settings;
             if ((DateTime.Now - ServiceProvider.Settings.LastUpdateCheckDate).TotalDays > 7)
@@ -113,7 +112,7 @@ namespace CameraControl
                 ServiceProvider.Settings.Save();
                 CheckForUpdate();
             }
-            ServiceProvider.DeviceManager.CameraSelected += DeviceManager_CameraSelected;
+
             SetLayout(ServiceProvider.Settings.SelectedLayout);
             ServiceProvider.Settings.ApplyTheme(this);
 
@@ -126,6 +125,8 @@ namespace CameraControl
 
             brushRegexDef = txt_Barcode.Background;
             flashBackgroundDefault = MainGrid.Background;
+
+            ClearOldSessionFiles();
         }
 
         void DeviceManager_CameraSelected(ICameraDevice oldcameraDevice, ICameraDevice newcameraDevice)
@@ -180,6 +181,11 @@ namespace CameraControl
             // Custom branch; do not check for updates.
             //if (PhotoUtils.CheckForUpdate())
             //    Close();
+        }
+
+        private void ClearOldSessionFiles()
+        {
+            ServiceProvider.Settings.DefaultSession.PurgeOldFiles(new TimeSpan(0,0,15,0));
         }
 
         void PhotoCaptured(object o)
@@ -857,6 +863,11 @@ namespace CameraControl
                 }
             }));
 
+        }
+
+        private void btn_ClearCache_Click(object sender, RoutedEventArgs e)
+        {
+            ClearOldSessionFiles();
         }
 
     }

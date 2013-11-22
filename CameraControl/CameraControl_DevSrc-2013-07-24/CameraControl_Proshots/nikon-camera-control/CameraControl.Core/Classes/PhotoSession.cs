@@ -554,6 +554,40 @@ namespace CameraControl.Core.Classes
             }
         }
 
+        public void PurgeOldFiles(TimeSpan retentionPeriod)
+        {
+            // default: keep files from last 15 minutes.
+            if (retentionPeriod == null) retentionPeriod = new TimeSpan(0, 0, 15, 0);
+            DateTime retentionCutoff = DateTime.Now - retentionPeriod;
+            
+            // Remove session entries
+            var files = Files;
+            for (int i = files.Count - 1; i >= 0; i--)
+                if (files[i].FileDate < retentionCutoff)
+                    files.RemoveAt(i);
+            ServiceProvider.Settings.Save(this);
+
+            // Purge files
+            var cachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName, "Cache");
+            foreach (var file in Directory.GetFiles(Path.Combine(cachePath, "Small")))
+            {
+                try
+                {
+                    if (File.Exists(file) && File.GetCreationTime(file) < retentionCutoff)
+                        File.Delete(file);
+                }
+                catch (Exception e) { Log.Error(e.ToString()); }
+            }
+            foreach (var file in Directory.GetFiles(Path.Combine(cachePath, "Large")))
+            {
+                try
+                {
+                    if (File.Exists(file) && File.GetCreationTime(file) < retentionCutoff)
+                        File.Delete(file);
+                }
+                catch (Exception e) { Log.Error(e.ToString()); }
+            }
+        }
 
     }
 

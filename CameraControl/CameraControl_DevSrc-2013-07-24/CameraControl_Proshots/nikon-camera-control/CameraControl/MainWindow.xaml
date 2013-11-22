@@ -184,7 +184,7 @@
             <ColumnDefinition Width="136" />
             <ColumnDefinition Width="200" />
             <ColumnDefinition Width="454*" />
-            <ColumnDefinition Width="294" />
+            <ColumnDefinition Width="300" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="120" />
@@ -269,6 +269,7 @@
                 <Button Content="{T:TranslateExtension SessionAdd}" Grid.Column="3" Name="btn_add_Sesion" Margin="3" Click="btn_add_Sesion_Click" />
                 <Button Content="{T:TranslateExtension SessionEdit}" Grid.Column="3" Name="btn_edit_Sesion" Margin="3" Click="btn_edit_Sesion_Click" />
                 <Button Content="{T:TranslateExtension SessionDel}" Grid.Column="3" Name="btn_del_Sesion" Margin="3" Click="btn_del_Sesion_Click" />
+                <Button Content="CLR" Grid.Column="3" Name="btn_clr_Sesion" Margin="3" Click="btn_ClearCache_Click" />
             </StackPanel>
             <Grid>
                 <Grid.ColumnDefinitions>

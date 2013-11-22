@@ -100,7 +100,8 @@ namespace CameraControl.Plugins.MainWindowPlugins
         
         if(!ServiceProvider.Settings.DefaultsWereLoaded)
             ServiceProvider.WindowsManager.ExecuteCommand(WindowsCmdConsts.EditSessionWnd_Firstrun);
-        
+
+        ClearOldSessionFiles();
         CheckBarcode();
     }
 
@@ -192,6 +193,11 @@ namespace CameraControl.Plugins.MainWindowPlugins
       {
         MessageBox.Show("Error occurred :" + exception.Message);
       }
+    }
+
+    private void ClearOldSessionFiles()
+    {
+        ServiceProvider.Settings.DefaultSession.PurgeOldFiles(new TimeSpan(0, 0, 15, 0));
     }
 
     private void PhotoCaptured(object o)
@@ -431,6 +437,11 @@ namespace CameraControl.Plugins.MainWindowPlugins
             }
         }));
         
+    }
+
+    private void btn_ClearCache_Click(object sender, RoutedEventArgs e)
+    {
+        ClearOldSessionFiles();
     }
     
 

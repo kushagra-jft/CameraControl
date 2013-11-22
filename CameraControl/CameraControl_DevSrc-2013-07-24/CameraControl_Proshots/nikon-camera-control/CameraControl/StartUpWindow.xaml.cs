@@ -127,14 +127,13 @@ namespace CameraControl
 
         private void StartApplication()
         {
+            // Get main window
             IMainWindowPlugin mainWindowPlugin = _basemainwindow;
-            
             var args = Environment.GetCommandLineArgs();
             String wndName = "";
             foreach (string arg in args)
                 if (arg.Length > 5 && arg.Substring(0, 5) == "-wnd=") 
                     wndName = arg.Substring(5);
-
             if (!String.IsNullOrEmpty(wndName))
             {
                 foreach (IMainWindowPlugin windowPlugin in ServiceProvider.PluginManager.MainWindowPlugins)
@@ -145,18 +144,16 @@ namespace CameraControl
             }
             else
             {
-                if (ServiceProvider.Settings.SelectedMainForm != _basemainwindow.DisplayName)
-                {
+                if (ServiceProvider.Settings.SelectedMainForm != _basemainwindow.DisplayName) {
                     SelectorWnd wnd = new SelectorWnd();
                     wnd.ShowDialog();
                 }
                 foreach (IMainWindowPlugin windowPlugin in ServiceProvider.PluginManager.MainWindowPlugins)
-                {
                     if (windowPlugin.DisplayName == ServiceProvider.Settings.SelectedMainForm)
                         mainWindowPlugin = windowPlugin;
-                }
             }
 
+            // Display window
             mainWindowPlugin.Show();
             if (mainWindowPlugin is Window)
                 ((Window) mainWindowPlugin).Activate();
