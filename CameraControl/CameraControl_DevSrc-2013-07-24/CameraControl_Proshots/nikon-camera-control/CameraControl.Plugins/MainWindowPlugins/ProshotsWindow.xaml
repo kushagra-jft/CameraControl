@@ -229,7 +229,7 @@
 
         <Label Content="Barcode:" Grid.Column="0" Grid.Row="4" Name="lbl_Barcode" Grid.ColumnSpan="1" HorizontalAlignment="Right" />
         <TextBox Grid.Column="1" Grid.Row="4" Name="txt_Barcode" Margin="2" Grid.ColumnSpan="1" KeyUp="on_txt_Barcode_KeyUp" KeyDown="on_txt_Barcode_KeyDown" 
-                 Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.Barcode}" IsReadOnly="False" />
+                 Text="{Binding Source={x:Static Member=Core:ServiceProvider.Settings}, Path=DefaultSession.LastBarcode}" IsReadOnly="False" />
         <Button Grid.Row="4" Grid.Column="2" Margin="3" Content="Clear Barcode" Name="btn_ClearBarcode" Click="btn_ClearBarcode_Click"/>
 
         <Button Grid.Row="6" Grid.Column="2" Margin="3" Height="20" Content="Clear Cache" Name="btn_ClearCache" Click="btn_ClearCache_Click"/>

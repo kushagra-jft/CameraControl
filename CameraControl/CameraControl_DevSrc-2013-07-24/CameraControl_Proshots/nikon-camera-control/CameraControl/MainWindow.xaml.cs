@@ -127,6 +127,7 @@ namespace CameraControl
             flashBackgroundDefault = MainGrid.Background;
 
             ClearOldSessionFiles();
+            CheckBarcode();
         }
 
         void DeviceManager_CameraSelected(ICameraDevice oldcameraDevice, ICameraDevice newcameraDevice)
