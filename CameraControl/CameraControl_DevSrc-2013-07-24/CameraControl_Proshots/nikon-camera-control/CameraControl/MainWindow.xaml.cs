@@ -177,8 +177,9 @@ namespace CameraControl
 
         private void CheckForUpdate()
         {
-            if (PhotoUtils.CheckForUpdate())
-                Close();
+            // Custom branch; do not check for updates.
+            //if (PhotoUtils.CheckForUpdate())
+            //    Close();
         }
 
         void PhotoCaptured(object o)
