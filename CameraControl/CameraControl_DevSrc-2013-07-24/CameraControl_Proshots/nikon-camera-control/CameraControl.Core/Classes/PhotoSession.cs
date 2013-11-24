@@ -569,7 +569,11 @@ namespace CameraControl.Core.Classes
 
             // Purge files
             var cachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), Settings.AppName, "Cache");
-            foreach (var file in Directory.GetFiles(Path.Combine(cachePath, "Small")))
+            var cachePathLarge = Path.Combine(cachePath, "Large");
+            var cachePathSmall = Path.Combine(cachePath, "Small");
+            if (!Directory.Exists(cachePath) || !Directory.Exists(cachePathLarge) || !Directory.Exists(cachePathSmall)) return;
+
+            foreach (var file in Directory.GetFiles(cachePathLarge))
             {
                 try
                 {
@@ -578,7 +582,7 @@ namespace CameraControl.Core.Classes
                 }
                 catch (Exception e) { Log.Error(e.ToString()); }
             }
-            foreach (var file in Directory.GetFiles(Path.Combine(cachePath, "Large")))
+            foreach (var file in Directory.GetFiles(cachePathSmall))
             {
                 try
                 {
