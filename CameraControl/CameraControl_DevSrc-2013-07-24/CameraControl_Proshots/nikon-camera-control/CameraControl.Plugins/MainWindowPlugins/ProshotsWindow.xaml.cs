@@ -286,7 +286,7 @@ namespace CameraControl.Plugins.MainWindowPlugins
                 if (imgFile != null)
                 {
                     FileItem delFileItem = new FileItem(imgFile, Cam);
-                    fileItem.Device.DeleteObject(delFileItem.DeviceObject);
+                    delFileItem.Device.DeleteObject(delFileItem.DeviceObject);
                 }
             }
 
