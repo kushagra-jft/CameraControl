@@ -100,7 +100,7 @@ namespace CameraControl.windows
             return;
 
         Session.Name = "Default";
-        Session.FileNameTemplate = "$B$-$Qt$UTime";
+        Session.FileNameTemplate = "$B$-$Qt$C";
         Session.UseOriginalFilename = false;
         Session.BarcodeRegex = @"^[a-zA-Z0-9\(\)_\-\.]*$";
         Session.BarcodeDelimiter = "-";
